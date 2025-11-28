@@ -4,8 +4,9 @@ import { mockBooks } from "@/data/mockBooks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, Plus } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AddBookDialog } from "@/components/Books/AddBookDialog";
 
 export default function Library() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,10 +38,7 @@ export default function Library() {
                 {filteredBooks.length} {filteredBooks.length === 1 ? "Buch" : "Bücher"} gefunden
               </p>
             </div>
-            <Button className="rounded-xl bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all">
-              <Plus className="mr-2 h-5 w-5" />
-              Buch hinzufügen
-            </Button>
+            <AddBookDialog />
           </div>
 
           {/* Search & Filter Bar */}
