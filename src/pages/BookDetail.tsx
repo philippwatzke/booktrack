@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { mockBooks } from "@/data/mockBooks";
 import { Button } from "@/components/ui/button";
@@ -14,11 +15,15 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
+import { ReadingSessionTimer } from "@/components/ReadingSession/ReadingSessionTimer";
+import { NoteEditor } from "@/components/Notes/NoteEditor";
+import { QuoteEditor } from "@/components/Quotes/QuoteEditor";
 
 export default function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const book = mockBooks.find((b) => b.id === id);
+  const [sessionOpen, setSessionOpen] = useState(false);
 
   if (!book) {
     return (
@@ -73,7 +78,10 @@ export default function BookDetail() {
             {/* Actions */}
             <div className="space-y-3">
               {book.status === "READING" && (
-                <Button className="w-full rounded-xl h-12 bg-primary text-primary-foreground shadow-md hover:shadow-lg">
+                <Button 
+                  onClick={() => setSessionOpen(true)}
+                  className="w-full rounded-xl h-12 bg-primary text-primary-foreground shadow-md hover:shadow-lg"
+                >
                   <Play className="mr-2 h-5 w-5" />
                   Session starten
                 </Button>
@@ -87,6 +95,14 @@ export default function BookDetail() {
                 Löschen
               </Button>
             </div>
+
+            {/* Reading Session Timer */}
+            <ReadingSessionTimer
+              open={sessionOpen}
+              onOpenChange={setSessionOpen}
+              bookTitle={book.title}
+              currentPage={book.currentPage}
+            />
           </div>
 
           {/* Right Column - Details */}
@@ -202,19 +218,11 @@ export default function BookDetail() {
               </TabsContent>
 
               <TabsContent value="notes" className="mt-6">
-                <Card className="p-6 rounded-2xl border-border">
-                  <p className="text-muted-foreground text-center py-8">
-                    Noch keine Notizen vorhanden.
-                  </p>
-                </Card>
+                <NoteEditor bookId={book.id} />
               </TabsContent>
 
               <TabsContent value="quotes" className="mt-6">
-                <Card className="p-6 rounded-2xl border-border">
-                  <p className="text-muted-foreground text-center py-8">
-                    Noch keine Zitate gespeichert.
-                  </p>
-                </Card>
+                <QuoteEditor bookId={book.id} />
               </TabsContent>
             </Tabs>
           </div>

@@ -8,6 +8,12 @@ import {
   Clock,
   Star
 } from "lucide-react";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 
 export default function Stats() {
   const totalBooks = mockBooks.length;
@@ -34,6 +40,43 @@ export default function Stats() {
   const topGenres = Object.entries(genreCount)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
+
+  // Chart data
+  const genreChartData = topGenres.map(([genre, count]) => ({
+    genre,
+    count,
+  }));
+
+  const monthlyReadingData = [
+    { month: "Jan", pages: 450, books: 2 },
+    { month: "Feb", pages: 620, books: 3 },
+    { month: "Mär", pages: 380, books: 1 },
+    { month: "Apr", pages: 890, books: 4 },
+    { month: "Mai", pages: 540, books: 2 },
+    { month: "Jun", pages: 710, books: 3 },
+  ];
+
+  const pieChartData = topGenres.map(([genre, count]) => ({
+    name: genre,
+    value: count,
+  }));
+
+  const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--primary) / 0.6)", "hsl(var(--accent) / 0.6)", "hsl(var(--muted-foreground))"];
+
+  const chartConfig = {
+    count: {
+      label: "Bücher",
+      color: "hsl(var(--primary))",
+    },
+    pages: {
+      label: "Seiten",
+      color: "hsl(var(--primary))",
+    },
+    books: {
+      label: "Bücher",
+      color: "hsl(var(--accent))",
+    },
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -110,32 +153,108 @@ export default function Stats() {
           </Card>
         </div>
 
-        {/* Genre Distribution */}
+        {/* Charts Grid */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {/* Genre Bar Chart */}
+          <Card className="p-8 rounded-2xl border-border shadow-md">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Top Genres</h2>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={genreChartData}>
+                  <XAxis 
+                    dataKey="genre" 
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="hsl(var(--primary))"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
+
+          {/* Genre Pie Chart */}
+          <Card className="p-8 rounded-2xl border-border shadow-md">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Genre-Verteilung</h2>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="hsl(var(--primary))"
+                    dataKey="value"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
+        </div>
+
+        {/* Monthly Reading Progress */}
         <Card className="p-8 rounded-2xl border-border shadow-md">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Top Genres</h2>
-          <div className="space-y-4">
-            {topGenres.map(([genre, count], index) => {
-              const percentage = (count / totalBooks) * 100;
-              return (
-                <div key={genre}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-foreground">{genre}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {count} {count === 1 ? "Buch" : "Bücher"} ({percentage.toFixed(0)}%)
-                    </span>
-                  </div>
-                  <div className="h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        index % 2 === 0 ? "bg-primary" : "bg-accent"
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Lese-Fortschritt</h2>
+          <ChartContainer config={chartConfig} className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyReadingData}>
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  yAxisId="left"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="pages" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
+                  dot={{ fill: "hsl(var(--primary))", r: 6 }}
+                />
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="books" 
+                  stroke="hsl(var(--accent))" 
+                  strokeWidth={3}
+                  dot={{ fill: "hsl(var(--accent))", r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </Card>
       </div>
     </div>
