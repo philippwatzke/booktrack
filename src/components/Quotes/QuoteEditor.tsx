@@ -14,26 +14,26 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Quote as QuoteIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface Quote {
-  id: string;
-  text: string;
-  page?: number;
-  createdAt: string;
-}
+import { useQuotes, useCreateQuote, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
+import { Quote } from "@/types/book";
 
 interface QuoteEditorProps {
   bookId: string;
+  totalPages?: number;
 }
 
-export function QuoteEditor({ bookId }: QuoteEditorProps) {
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+export function QuoteEditor({ bookId, totalPages }: QuoteEditorProps) {
+  const { data: quotes = [], isLoading } = useQuotes(bookId);
+  const createQuote = useCreateQuote();
+  const updateQuote = useUpdateQuote();
+  const deleteQuote = useDeleteQuote();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [text, setText] = useState("");
   const [page, setPage] = useState("");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!text.trim()) {
       toast({
         title: "Fehler",
@@ -44,27 +44,19 @@ export function QuoteEditor({ bookId }: QuoteEditorProps) {
     }
 
     if (editingQuote) {
-      setQuotes(
-        quotes.map((quote) =>
-          quote.id === editingQuote.id
-            ? {
-                ...quote,
-                text,
-                page: page ? Number(page) : undefined,
-              }
-            : quote
-        )
-      );
-      toast({ title: "Zitat aktualisiert" });
+      await updateQuote.mutateAsync({
+        id: editingQuote.id,
+        data: {
+          text,
+          page: page ? Number(page) : undefined,
+        },
+      });
     } else {
-      const newQuote: Quote = {
-        id: Date.now().toString(),
+      await createQuote.mutateAsync({
+        bookId,
         text,
         page: page ? Number(page) : undefined,
-        createdAt: new Date().toISOString(),
-      };
-      setQuotes([newQuote, ...quotes]);
-      toast({ title: "Zitat hinzugefügt" });
+      });
     }
 
     handleClose();
@@ -77,9 +69,8 @@ export function QuoteEditor({ bookId }: QuoteEditorProps) {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setQuotes(quotes.filter((quote) => quote.id !== id));
-    toast({ title: "Zitat gelöscht" });
+  const handleDelete = async (id: string) => {
+    await deleteQuote.mutateAsync(id);
   };
 
   const handleClose = () => {
@@ -113,11 +104,19 @@ export function QuoteEditor({ bookId }: QuoteEditorProps) {
               <Input
                 id="page"
                 type="number"
+                min="1"
+                max={totalPages || undefined}
                 placeholder="z.B. 42"
                 value={page}
-                onChange={(e) => setPage(e.target.value)}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!totalPages || val <= totalPages || e.target.value === '') {
+                    setPage(e.target.value);
+                  }
+                }}
                 className="rounded-xl h-11"
               />
+              {totalPages && <p className="text-xs text-muted-foreground">Max: {totalPages} Seiten</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="text">Zitat</Label>

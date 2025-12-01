@@ -1,15 +1,18 @@
-import { 
-  Library, 
-  BookOpen, 
-  BookCheck, 
-  BookmarkPlus, 
-  Tags, 
-  Quote, 
+import {
+  Library,
+  BookOpen,
+  BookCheck,
+  BookmarkPlus,
+  Tags,
+  Quote,
   BarChart3,
-  Settings
+  Settings,
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -20,11 +23,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const mainItems = [
-  { title: "Bibliothek", url: "/", icon: Library },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Bibliothek", url: "/library", icon: Library },
   { title: "Aktuell lesen", url: "/reading", icon: BookOpen },
   { title: "Gelesen", url: "/finished", icon: BookCheck },
   { title: "Wunschliste", url: "/wishlist", icon: BookmarkPlus },
@@ -43,6 +49,13 @@ const otherItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
@@ -148,6 +161,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border p-4">
+        {open && user && (
+          <div className="mb-3 px-2">
+            <p className="text-sm font-medium text-sidebar-foreground">{user.name || user.email}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+        )}
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sidebar-foreground hover:bg-sidebar-accent/50"
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {open && <span>Abmelden</span>}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

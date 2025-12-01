@@ -1,5 +1,5 @@
 import { BookCard } from "@/components/Books/BookCard";
-import { mockBooks } from "@/data/mockBooks";
+import { useBooks } from "@/hooks/useBooks";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,13 +7,25 @@ import { BookmarkPlus, Flame } from "lucide-react";
 
 export default function Wishlist() {
   const navigate = useNavigate();
-  const wishlistBooks = mockBooks.filter((book) => book.status === "WANT_TO_READ");
+  const { data: books = [], isLoading } = useBooks({ status: "WANT_TO_READ" });
+  const wishlistBooks = books;
 
-  const sortedBooks = [...wishlistBooks].sort((a, b) => 
+  const sortedBooks = [...wishlistBooks].sort((a, b) =>
     (b.priority || 0) - (a.priority || 0)
   );
 
   const highPriorityBooks = wishlistBooks.filter((book) => (book.priority || 0) >= 4).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Bücher werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">

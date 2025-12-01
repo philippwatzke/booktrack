@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Select-Object -First 10)",
+      "Bash(sc query:*)",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\Program Files\\PostgreSQL\")",
+      "Bash(npm run db:seed:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(cat:*)",
+      "Bash(del \"c:\\Users\\phili\\OneDrive\\Dokumente\\claudecodetest\\inkwell-atlas\\src\\components\\ReadingSession\\ReadingSessionTimer.tsx\")",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(del nul)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

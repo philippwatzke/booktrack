@@ -1,18 +1,30 @@
 import { BookCard } from "@/components/Books/BookCard";
-import { mockBooks } from "@/data/mockBooks";
+import { useBooks } from "@/hooks/useBooks";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { BookOpen, TrendingUp } from "lucide-react";
 
 export default function Reading() {
   const navigate = useNavigate();
-  const readingBooks = mockBooks.filter((book) => book.status === "READING");
+  const { data: books = [], isLoading } = useBooks({ status: "READING" });
+  const readingBooks = books;
 
   const totalPages = readingBooks.reduce((sum, book) => sum + (book.currentPage || 0), 0);
-  const totalBooksPages = readingBooks.reduce((sum, book) => sum + book.pageCount, 0);
-  const overallProgress = totalBooksPages > 0 
-    ? Math.round((totalPages / totalBooksPages) * 100) 
+  const totalBooksPages = readingBooks.reduce((sum, book) => sum + (book.pageCount || 0), 0);
+  const overallProgress = totalBooksPages > 0
+    ? Math.round((totalPages / totalBooksPages) * 100)
     : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Bücher werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">

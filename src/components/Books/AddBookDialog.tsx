@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,51 +18,94 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Loader2, BookOpen } from "lucide-react";
+import { Plus, Search, Loader2, BookOpen, ArrowLeft, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BookStatus } from "@/types/book";
+import { useCreateBook } from "@/hooks/useBooks";
+import { ImageUpload } from "./ImageUpload";
+import { booksApi } from "@/lib/api";
+import { Card } from "@/components/ui/card";
 
 interface AddBookDialogProps {
   onBookAdded?: () => void;
 }
 
+interface BookSearchResult {
+  googleBooksId: string;
+  title: string;
+  author: string;
+  authors: string[];
+  isbn?: string;
+  isbn13?: string;
+  pageCount?: number;
+  publishedYear?: number;
+  publisher?: string;
+  description?: string;
+  coverUrl?: string;
+  genres?: string[];
+}
+
 export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'search' | 'manual'>('search');
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [isbn, setIsbn] = useState("");
+  const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null);
+
+  // Form state
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [description, setDescription] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
   const [pageCount, setPageCount] = useState("");
   const [publishedYear, setPublishedYear] = useState("");
   const [status, setStatus] = useState<BookStatus>("WANT_TO_READ");
+  const [isbn, setIsbn] = useState("");
 
-  const handleIsbnSearch = async () => {
-    if (!isbn.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte ISBN eingeben",
-        variant: "destructive",
-      });
+  const createBookMutation = useCreateBook();
+
+  // Debounced search
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
       return;
     }
 
-    setIsSearching(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      // Mock data for demonstration
-      setTitle("Beispielbuch via ISBN");
-      setAuthor("Max Mustermann");
-      setDescription("Eine faszinierende Geschichte über...");
-      setPageCount("320");
-      setPublishedYear("2023");
-      setIsSearching(false);
-      toast({
-        title: "Buch gefunden",
-        description: "Buchdetails wurden automatisch ausgefüllt",
-      });
-    }, 1500);
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await booksApi.searchExternal(searchQuery);
+        if (response.success) {
+          setSearchResults(response.data);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        toast({
+          title: "Fehler",
+          description: "Suche fehlgeschlagen",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const handleSelectBook = (book: BookSearchResult) => {
+    setSelectedBook(book);
+    setTitle(book.title);
+    setAuthor(book.author);
+    setDescription(book.description || "");
+    setCoverUrl(book.coverUrl || "");
+    setPageCount(book.pageCount?.toString() || "");
+    setPublishedYear(book.publishedYear?.toString() || "");
+    setIsbn(book.isbn || book.isbn13 || "");
+    setMode('manual'); // Switch to manual mode to show filled form
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,78 +120,182 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
       return;
     }
 
-    // Here you would save the book
-    toast({
-      title: "Buch hinzugefügt",
-      description: `"${title}" wurde zur Bibliothek hinzugefügt`,
-    });
+    createBookMutation.mutate(
+      {
+        title: title.trim(),
+        author: author.trim(),
+        description: description.trim() || undefined,
+        coverUrl: coverUrl.trim() || undefined,
+        pageCount: pageCount ? parseInt(pageCount) : undefined,
+        publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
+        status,
+        isbn: isbn.trim() || undefined,
+        genres: selectedBook?.genres || [],
+        tags: [],
+      },
+      {
+        onSuccess: () => {
+          // Reset form
+          resetForm();
+          setOpen(false);
+          onBookAdded?.();
+        },
+      }
+    );
+  };
 
-    // Reset form
-    setIsbn("");
+  const resetForm = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSelectedBook(null);
     setTitle("");
     setAuthor("");
     setDescription("");
+    setCoverUrl("");
     setPageCount("");
     setPublishedYear("");
     setStatus("WANT_TO_READ");
-    setOpen(false);
-    onBookAdded?.();
+    setIsbn("");
+    setMode('search');
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      resetForm();
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="rounded-xl bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all">
           <Plus className="mr-2 h-5 w-5" />
           Buch hinzufügen
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] rounded-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] rounded-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Neues Buch hinzufügen</DialogTitle>
           <DialogDescription>
-            Füge ein Buch über ISBN-Suche oder manuell hinzu
+            {mode === 'search'
+              ? 'Suche nach einem Buch, um Details automatisch auszufüllen'
+              : 'Fülle die Details für dein Buch aus'
+            }
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {/* ISBN Search */}
-          <div className="space-y-2">
-            <Label htmlFor="isbn">ISBN-Suche</Label>
-            <div className="flex gap-2">
-              <Input
-                id="isbn"
-                placeholder="z.B. 978-3-16-148410-0"
-                value={isbn}
-                onChange={(e) => setIsbn(e.target.value)}
-                className="rounded-xl h-11 flex-1"
-              />
+        {mode === 'search' ? (
+          <div className="space-y-4 py-4">
+            {/* Search Bar */}
+            <div className="space-y-2">
+              <Label htmlFor="search">Buchtitel oder Autor suchen</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="search"
+                  placeholder="z.B. Harry Potter, Stephen King..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="rounded-xl h-12 pl-10"
+                  autoFocus
+                />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-3.5 h-5 w-5 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {searchResults.map((book) => (
+                  <Card
+                    key={book.googleBooksId}
+                    className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleSelectBook(book)}
+                  >
+                    <div className="flex gap-4">
+                      {book.coverUrl && (
+                        <img
+                          src={book.coverUrl}
+                          alt={book.title}
+                          className="w-16 h-24 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm line-clamp-2 mb-1">
+                          {book.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {book.author}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {book.publishedYear && <span>📅 {book.publishedYear}</span>}
+                          {book.pageCount && <span>📄 {book.pageCount} Seiten</span>}
+                          {book.publisher && <span className="line-clamp-1">🏢 {book.publisher}</span>}
+                        </div>
+                      </div>
+                      <Check className="h-5 w-5 text-primary opacity-0 group-hover:opacity-100" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Keine Bücher gefunden</p>
+                <p className="text-sm">Versuche einen anderen Suchbegriff</p>
+              </div>
+            )}
+
+            {searchQuery.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Gib einen Buchtitel oder Autor ein, um zu suchen</p>
+              </div>
+            )}
+
+            {/* Manual Entry Option */}
+            <div className="border-t border-border pt-4">
               <Button
                 type="button"
-                onClick={handleIsbnSearch}
-                disabled={isSearching}
-                className="rounded-xl px-6"
+                variant="outline"
+                onClick={() => setMode('manual')}
+                className="w-full rounded-xl h-12"
               >
-                {isSearching ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Search className="h-5 w-5" />
-                )}
+                Buch nicht gefunden? Manuell hinzufügen
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Buchdetails werden automatisch ausgefüllt
-            </p>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            {/* Back Button */}
+            {!selectedBook && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setMode('search')}
+                className="mb-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Zurück zur Suche
+              </Button>
+            )}
 
-          <div className="border-t border-border pt-6">
-            <div className="flex items-center gap-2 mb-4 text-muted-foreground">
-              <div className="h-px bg-border flex-1" />
-              <span className="text-sm">oder manuell eingeben</span>
-              <div className="h-px bg-border flex-1" />
-            </div>
+            {selectedBook && (
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4">
+                <p className="text-sm text-primary font-medium flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Ausgewählt: {selectedBook.title}
+                </p>
+              </div>
+            )}
 
-            {/* Manual Entry */}
+            {/* Manual Entry Form */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Titel *</Label>
@@ -184,6 +331,8 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                   className="rounded-xl min-h-[100px] resize-none"
                 />
               </div>
+
+              <ImageUpload value={coverUrl} onChange={setCoverUrl} />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -224,23 +373,31 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                 </Select>
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="flex-1 rounded-xl h-12"
-            >
-              Abbrechen
-            </Button>
-            <Button type="submit" className="flex-1 rounded-xl h-12">
-              <BookOpen className="mr-2 h-5 w-5" />
-              Buch hinzufügen
-            </Button>
-          </div>
-        </form>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="flex-1 rounded-xl h-12"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 rounded-xl h-12"
+                disabled={createBookMutation.isPending}
+              >
+                {createBookMutation.isPending ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <BookOpen className="mr-2 h-5 w-5" />
+                )}
+                Buch hinzufügen
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

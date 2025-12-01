@@ -13,25 +13,76 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Play, Pause, StopCircle, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { readingSessionsApi, booksApi } from "@/lib/api";
 
 interface ReadingSessionTimerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  bookId: string;
   bookTitle: string;
   currentPage?: number;
+  totalPages?: number;
 }
 
 export function ReadingSessionTimer({
   open,
   onOpenChange,
+  bookId,
   bookTitle,
   currentPage = 0,
+  totalPages,
 }: ReadingSessionTimerProps) {
+  const queryClient = useQueryClient();
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [startPage, setStartPage] = useState(currentPage);
   const [endPage, setEndPage] = useState(currentPage);
   const [notes, setNotes] = useState("");
+  const [startTime, setStartTime] = useState<Date | null>(null);
+
+  // Create reading session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async (data: {
+      bookId: string;
+      duration: number;
+      pagesRead: number;
+      startPage: number;
+      endPage: number;
+      notes?: string;
+    }) => {
+      const response = await readingSessionsApi.create(data);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create session');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingSessions'] });
+    },
+  });
+
+  // Update book progress mutation
+  const updateBookMutation = useMutation({
+    mutationFn: async (data: { id: string; currentPage: number }) => {
+      const response = await booksApi.update(data.id, { currentPage: data.currentPage });
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update book');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['book', bookId] });
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      setStartPage(currentPage);
+      setEndPage(currentPage);
+    }
+  }, [open, currentPage]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -53,19 +104,61 @@ export function ReadingSessionTimer({
   };
 
   const handleStartPause = () => {
+    if (!isRunning && !startTime) {
+      setStartTime(new Date());
+    }
     setIsRunning(!isRunning);
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
+    if (seconds === 0) {
+      toast({
+        title: "Keine Session",
+        description: "Bitte starte zuerst die Session",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const pagesRead = endPage - startPage;
-    toast({
-      title: "Session gespeichert",
-      description: `${formatTime(seconds)} gelesen, ${pagesRead} Seiten`,
-    });
-    setIsRunning(false);
-    setSeconds(0);
-    setNotes("");
-    onOpenChange(false);
+
+    try {
+      // Save reading session
+      await createSessionMutation.mutateAsync({
+        bookId,
+        duration: seconds,
+        pagesRead,
+        startPage,
+        endPage,
+        notes: notes.trim() || undefined,
+      });
+
+      // Update book's current page
+      if (endPage > currentPage) {
+        await updateBookMutation.mutateAsync({
+          id: bookId,
+          currentPage: endPage,
+        });
+      }
+
+      toast({
+        title: "Session gespeichert",
+        description: `${formatTime(seconds)} gelesen, ${pagesRead} Seiten`,
+      });
+
+      // Reset form
+      setIsRunning(false);
+      setSeconds(0);
+      setNotes("");
+      setStartTime(null);
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Session konnte nicht gespeichert werden",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClose = () => {
@@ -77,6 +170,12 @@ export function ReadingSessionTimer({
       });
       return;
     }
+
+    // Reset on close if session wasn't saved
+    setIsRunning(false);
+    setSeconds(0);
+    setNotes("");
+    setStartTime(null);
     onOpenChange(false);
   };
 
@@ -121,7 +220,7 @@ export function ReadingSessionTimer({
             </Button>
             <Button
               onClick={handleStop}
-              disabled={seconds === 0}
+              disabled={seconds === 0 || createSessionMutation.isPending || updateBookMutation.isPending}
               variant="outline"
               className="h-14 px-6 rounded-xl"
             >
@@ -137,8 +236,15 @@ export function ReadingSessionTimer({
               <Input
                 id="startPage"
                 type="number"
+                min="0"
+                max={totalPages || undefined}
                 value={startPage}
-                onChange={(e) => setStartPage(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!totalPages || val <= totalPages) {
+                    setStartPage(val);
+                  }
+                }}
                 className="rounded-xl h-11"
                 disabled={isRunning}
               />
@@ -148,10 +254,18 @@ export function ReadingSessionTimer({
               <Input
                 id="endPage"
                 type="number"
+                min="0"
+                max={totalPages || undefined}
                 value={endPage}
-                onChange={(e) => setEndPage(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!totalPages || val <= totalPages) {
+                    setEndPage(val);
+                  }
+                }}
                 className="rounded-xl h-11"
               />
+              {totalPages && <p className="text-xs text-muted-foreground">Max: {totalPages} Seiten</p>}
             </div>
           </div>
 

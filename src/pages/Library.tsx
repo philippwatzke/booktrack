@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BookCard } from "@/components/Books/BookCard";
-import { mockBooks } from "@/data/mockBooks";
+import { useBooks } from "@/hooks/useBooks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddBookDialog } from "@/components/Books/AddBookDialog";
@@ -11,20 +19,59 @@ import { AddBookDialog } from "@/components/Books/AddBookDialog";
 export default function Library() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  const allGenres = Array.from(
-    new Set(mockBooks.flatMap((book) => book.genres || []))
+  const { data: books = [], isLoading, error } = useBooks();
+
+  const allGenres = useMemo(() =>
+    Array.from(new Set(books.flatMap((book) => book.genres || []))),
+    [books]
   );
 
-  const filteredBooks = mockBooks.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGenre =
-      !selectedGenre || book.genres?.includes(selectedGenre);
-    return matchesSearch && matchesGenre;
-  });
+  const filteredBooks = useMemo(() =>
+    books.filter((book) => {
+      const matchesSearch =
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesGenre =
+        !selectedGenre || book.genres?.includes(selectedGenre);
+      const matchesStatus =
+        selectedStatuses.length === 0 || selectedStatuses.includes(book.status);
+      return matchesSearch && matchesGenre && matchesStatus;
+    }),
+    [books, searchQuery, selectedGenre, selectedStatuses]
+  );
+
+  const toggleStatus = (status: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Bücher werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">Fehler beim Laden der Bücher</p>
+          <Button onClick={() => window.location.reload()}>Erneut versuchen</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -52,13 +99,44 @@ export default function Library() {
                 className="pl-12 h-12 rounded-xl border-border bg-card shadow-sm"
               />
             </div>
-            <Button 
-              variant="outline" 
-              className="rounded-xl h-12 px-6 border-border shadow-sm"
-            >
-              <SlidersHorizontal className="mr-2 h-5 w-5" />
-              Filter
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="rounded-xl h-12 px-6 border-border shadow-sm"
+                >
+                  <SlidersHorizontal className="mr-2 h-5 w-5" />
+                  Filter
+                  {selectedStatuses.length > 0 && (
+                    <Badge variant="default" className="ml-2 rounded-full px-2 py-0 text-xs">
+                      {selectedStatuses.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Status filtern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={selectedStatuses.includes("WANT_TO_READ")}
+                  onCheckedChange={() => toggleStatus("WANT_TO_READ")}
+                >
+                  Wunschliste
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={selectedStatuses.includes("READING")}
+                  onCheckedChange={() => toggleStatus("READING")}
+                >
+                  Aktuell lesen
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={selectedStatuses.includes("FINISHED")}
+                  onCheckedChange={() => toggleStatus("FINISHED")}
+                >
+                  Gelesen
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Genre Filter Pills */}

@@ -1,0 +1,184 @@
+// Prisma Schema for BookTrack
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books           Book[]
+  readingSessions ReadingSession[]
+  quotes          Quote[]
+  notes           Note[]
+  readingStreak   ReadingStreak?
+  dailyReadingLog DailyReadingLog[]
+  preferences     UserPreferences?
+  readingGoals    ReadingGoal[]
+
+  @@map("users")
+}
+
+model Book {
+  id             String   @id @default(cuid())
+  userId         String
+  isbn           String?
+  title          String
+  author         String
+  description    String?
+  coverUrl       String?
+  publisher      String?
+  publishedYear  Int?
+  pageCount      Int
+  language       String?
+  status         String  // WANT_TO_READ, READING, FINISHED
+  priority       Int?
+  rating         Int?
+  currentPage    Int?
+  genres         String?  // JSON string array
+  tags           String?  // JSON string array
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readingSessions ReadingSession[]
+  quotes          Quote[]
+  notes           Note[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("books")
+}
+
+model ReadingSession {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  duration  Int      // Duration in seconds
+  pagesRead Int
+  startPage Int
+  endPage   Int
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@map("reading_sessions")
+}
+
+model Quote {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  text      String
+  page      Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@map("quotes")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  content   String
+  page      Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@map("notes")
+}
+
+model ReadingStreak {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastReadDate  DateTime?
+  freezeDaysUsed Int      @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_streaks")
+}
+
+model DailyReadingLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String   // Store as YYYY-MM-DD string for SQLite
+  duration  Int      // Duration in seconds
+  pagesRead Int
+  booksRead String   // JSON array of book IDs
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("daily_reading_logs")
+}
+
+model UserPreferences {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  annualBookGoal        Int?     // Books per year
+  dailyReadingGoalMins  Int?     // Minutes per day
+  preferredReadingTimes String?  // JSON: ["morning", "evening"]
+  notificationsEnabled  Boolean  @default(false)
+  notificationTime      String?  // "20:00"
+  favoriteGenres        String?  // JSON array of genres
+  hasCompletedOnboarding Boolean @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model ReadingGoal {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // ANNUAL, MONTHLY, CUSTOM
+  target    Int
+  current   Int       @default(0)
+  metric    String    // BOOKS, PAGES, MINUTES
+  deadline  DateTime?
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("reading_goals")
+}
+
+// BookStatus is now a String field with values: WANT_TO_READ, READING, FINISHED

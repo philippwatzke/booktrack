@@ -14,26 +14,26 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface Note {
-  id: string;
-  content: string;
-  page?: number;
-  createdAt: string;
-}
+import { useNotes, useCreateNote, useUpdateNote, useDeleteNote } from "@/hooks/useNotes";
+import { Note } from "@/types/book";
 
 interface NoteEditorProps {
   bookId: string;
+  totalPages?: number;
 }
 
-export function NoteEditor({ bookId }: NoteEditorProps) {
-  const [notes, setNotes] = useState<Note[]>([]);
+export function NoteEditor({ bookId, totalPages }: NoteEditorProps) {
+  const { data: notes = [], isLoading } = useNotes(bookId);
+  const createNote = useCreateNote();
+  const updateNote = useUpdateNote();
+  const deleteNote = useDeleteNote();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [content, setContent] = useState("");
   const [page, setPage] = useState("");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!content.trim()) {
       toast({
         title: "Fehler",
@@ -44,27 +44,19 @@ export function NoteEditor({ bookId }: NoteEditorProps) {
     }
 
     if (editingNote) {
-      setNotes(
-        notes.map((note) =>
-          note.id === editingNote.id
-            ? {
-                ...note,
-                content,
-                page: page ? Number(page) : undefined,
-              }
-            : note
-        )
-      );
-      toast({ title: "Notiz aktualisiert" });
+      await updateNote.mutateAsync({
+        id: editingNote.id,
+        data: {
+          content,
+          page: page ? Number(page) : undefined,
+        },
+      });
     } else {
-      const newNote: Note = {
-        id: Date.now().toString(),
+      await createNote.mutateAsync({
+        bookId,
         content,
         page: page ? Number(page) : undefined,
-        createdAt: new Date().toISOString(),
-      };
-      setNotes([newNote, ...notes]);
-      toast({ title: "Notiz hinzugefügt" });
+      });
     }
 
     handleClose();
@@ -77,9 +69,8 @@ export function NoteEditor({ bookId }: NoteEditorProps) {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setNotes(notes.filter((note) => note.id !== id));
-    toast({ title: "Notiz gelöscht" });
+  const handleDelete = async (id: string) => {
+    await deleteNote.mutateAsync(id);
   };
 
   const handleClose = () => {
@@ -113,11 +104,19 @@ export function NoteEditor({ bookId }: NoteEditorProps) {
               <Input
                 id="page"
                 type="number"
+                min="1"
+                max={totalPages || undefined}
                 placeholder="z.B. 42"
                 value={page}
-                onChange={(e) => setPage(e.target.value)}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!totalPages || val <= totalPages || e.target.value === '') {
+                    setPage(e.target.value);
+                  }
+                }}
                 className="rounded-xl h-11"
               />
+              {totalPages && <p className="text-xs text-muted-foreground">Max: {totalPages} Seiten</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="content">Notiz</Label>

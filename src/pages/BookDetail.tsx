@@ -1,15 +1,23 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockBooks } from "@/data/mockBooks";
+import { useBook, useDeleteBook } from "@/hooks/useBooks";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Star, 
-  Calendar, 
-  Clock, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Star,
+  Calendar,
+  Clock,
   BookOpen,
   Play,
   Edit,
@@ -18,14 +26,30 @@ import {
 import { ReadingSessionTimer } from "@/components/ReadingSession/ReadingSessionTimer";
 import { NoteEditor } from "@/components/Notes/NoteEditor";
 import { QuoteEditor } from "@/components/Quotes/QuoteEditor";
+import { EditBookDialog } from "@/components/Books/EditBookDialog";
+import { ReadingStats } from "@/components/Books/ReadingStats";
 
 export default function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const book = mockBooks.find((b) => b.id === id);
+  const { data: book, isLoading, error } = useBook(id || "");
+  const deleteBook = useDeleteBook();
   const [sessionOpen, setSessionOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  if (!book) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Buch wird geladen...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !book) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -39,6 +63,11 @@ export default function BookDetail() {
   const progressPercent = book.currentPage && book.pageCount
     ? Math.round((book.currentPage / book.pageCount) * 100)
     : 0;
+
+  const handleDelete = async () => {
+    await deleteBook.mutateAsync(book.id);
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -86,11 +115,19 @@ export default function BookDetail() {
                   Session starten
                 </Button>
               )}
-              <Button variant="outline" className="w-full rounded-xl h-12 border-border">
+              <Button
+                variant="outline"
+                onClick={() => setEditOpen(true)}
+                className="w-full rounded-xl h-12 border-border"
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Bearbeiten
               </Button>
-              <Button variant="outline" className="w-full rounded-xl h-12 border-border text-destructive hover:bg-destructive/10">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteOpen(true)}
+                className="w-full rounded-xl h-12 border-border text-destructive hover:bg-destructive/10"
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Löschen
               </Button>
@@ -100,8 +137,10 @@ export default function BookDetail() {
             <ReadingSessionTimer
               open={sessionOpen}
               onOpenChange={setSessionOpen}
+              bookId={book.id}
               bookTitle={book.title}
               currentPage={book.currentPage}
+              totalPages={book.pageCount}
             />
           </div>
 
@@ -164,8 +203,18 @@ export default function BookDetail() {
               </Card>
             )}
 
+            {/* Reading Stats */}
+            {book.status === "READING" && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  Lese-Statistiken
+                </h3>
+                <ReadingStats bookId={book.id} />
+              </div>
+            )}
+
             {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-4 mb-8">
               <Card className="p-4 rounded-xl border-border text-center">
                 <BookOpen className="h-6 w-6 text-primary mx-auto mb-2" />
                 <div className="text-2xl font-bold text-foreground">{book.pageCount}</div>
@@ -177,11 +226,6 @@ export default function BookDetail() {
                   {book.publishedYear || "—"}
                 </div>
                 <div className="text-xs text-muted-foreground">Jahr</div>
-              </Card>
-              <Card className="p-4 rounded-xl border-border text-center">
-                <Clock className="h-6 w-6 text-primary mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">~5h</div>
-                <div className="text-xs text-muted-foreground">Lesezeit</div>
               </Card>
             </div>
 
@@ -218,16 +262,54 @@ export default function BookDetail() {
               </TabsContent>
 
               <TabsContent value="notes" className="mt-6">
-                <NoteEditor bookId={book.id} />
+                <NoteEditor bookId={book.id} totalPages={book.pageCount} />
               </TabsContent>
 
               <TabsContent value="quotes" className="mt-6">
-                <QuoteEditor bookId={book.id} />
+                <QuoteEditor bookId={book.id} totalPages={book.pageCount} />
               </TabsContent>
             </Tabs>
           </div>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <EditBookDialog
+        book={book}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Buch löschen?</DialogTitle>
+            <DialogDescription>
+              Bist du sicher, dass du "{book.title}" löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.
+              Alle Notizen, Zitate und Lesesessions werden ebenfalls gelöscht.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-xl"
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteBook.isPending}
+              className="rounded-xl"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

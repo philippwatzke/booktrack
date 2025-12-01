@@ -1,9 +1,11 @@
 import { Card } from "@/components/ui/card";
-import { mockBooks } from "@/data/mockBooks";
-import { 
-  BookOpen, 
-  BookCheck, 
-  BookmarkPlus, 
+import { useBooks } from "@/hooks/useBooks";
+import { useQuery } from "@tanstack/react-query";
+import { readingSessionsApi } from "@/lib/api";
+import {
+  BookOpen,
+  BookCheck,
+  BookmarkPlus,
   TrendingUp,
   Clock,
   Star
@@ -16,21 +18,39 @@ import {
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 
 export default function Stats() {
-  const totalBooks = mockBooks.length;
-  const readingBooks = mockBooks.filter((b) => b.status === "READING").length;
-  const finishedBooks = mockBooks.filter((b) => b.status === "FINISHED").length;
-  const wishlistBooks = mockBooks.filter((b) => b.status === "WANT_TO_READ").length;
+  const { data: books = [], isLoading } = useBooks();
 
-  const totalPagesRead = mockBooks
+  // Get all reading sessions from all books
+  const { data: allSessionsData } = useQuery({
+    queryKey: ['allReadingSessions'],
+    queryFn: async () => {
+      // Get sessions for all books
+      const sessionsPromises = books.map(book =>
+        readingSessionsApi.getByBook(book.id)
+      );
+      const results = await Promise.all(sessionsPromises);
+      return results.flatMap(result => result.success ? result.data : []);
+    },
+    enabled: books.length > 0,
+  });
+
+  const allSessions = allSessionsData || [];
+
+  const totalBooks = books.length;
+  const readingBooks = books.filter((b) => b.status === "READING").length;
+  const finishedBooks = books.filter((b) => b.status === "FINISHED").length;
+  const wishlistBooks = books.filter((b) => b.status === "WANT_TO_READ").length;
+
+  const totalPagesRead = books
     .filter((b) => b.status === "FINISHED")
-    .reduce((sum, b) => sum + b.pageCount, 0);
+    .reduce((sum, b) => sum + (b.pageCount || 0), 0);
 
-  const averageRating = mockBooks
-    .filter((b) => b.rating)
-    .reduce((sum, b, _, arr) => sum + (b.rating || 0) / arr.length, 0)
-    .toFixed(1);
+  const ratedBooks = books.filter((b) => b.rating);
+  const averageRating = ratedBooks.length > 0
+    ? (ratedBooks.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBooks.length).toFixed(1)
+    : "0.0";
 
-  const genreCount = mockBooks
+  const genreCount = books
     .flatMap((b) => b.genres || [])
     .reduce((acc, genre) => {
       acc[genre] = (acc[genre] || 0) + 1;
@@ -47,14 +67,34 @@ export default function Stats() {
     count,
   }));
 
-  const monthlyReadingData = [
-    { month: "Jan", pages: 450, books: 2 },
-    { month: "Feb", pages: 620, books: 3 },
-    { month: "Mär", pages: 380, books: 1 },
-    { month: "Apr", pages: 890, books: 4 },
-    { month: "Mai", pages: 540, books: 2 },
-    { month: "Jun", pages: 710, books: 3 },
-  ];
+  // Calculate monthly reading data from sessions
+  const monthlyReadingData = (() => {
+    const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+    const currentDate = new Date();
+    const last6Months = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      const monthSessions = allSessions.filter((session: any) => {
+        const sessionDate = new Date(session.createdAt);
+        const sessionMonthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}`;
+        return sessionMonthKey === monthKey;
+      });
+
+      const pages = monthSessions.reduce((sum: number, s: any) => sum + (s.pagesRead || 0), 0);
+      const uniqueBooks = new Set(monthSessions.map((s: any) => s.bookId)).size;
+
+      last6Months.push({
+        month: monthNames[date.getMonth()],
+        pages,
+        books: uniqueBooks,
+      });
+    }
+
+    return last6Months;
+  })();
 
   const pieChartData = topGenres.map(([genre, count]) => ({
     name: genre,
@@ -77,6 +117,17 @@ export default function Stats() {
       color: "hsl(var(--accent))",
     },
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Statistiken werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">

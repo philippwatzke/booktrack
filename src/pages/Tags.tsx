@@ -1,11 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockBooks } from "@/data/mockBooks";
+import { useBooks } from "@/hooks/useBooks";
 import { Tags as TagsIcon } from "lucide-react";
 
 export default function Tags() {
-  const allGenres = mockBooks.flatMap((book) => book.genres || []);
-  const allTags = mockBooks.flatMap((book) => book.tags || []);
+  const { data: books = [], isLoading } = useBooks();
+  const allGenres = books.flatMap((book) => book.genres || []);
+  const allTags = books.flatMap((book) => book.tags || []);
 
   const genreCount = allGenres.reduce((acc, genre) => {
     acc[genre] = (acc[genre] || 0) + 1;
@@ -16,6 +17,17 @@ export default function Tags() {
     acc[tag] = (acc[tag] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Daten werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">

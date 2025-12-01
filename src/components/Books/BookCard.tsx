@@ -66,13 +66,27 @@ export function BookCard({ book, onClick }: BookCardProps) {
         </h3>
         <p className="text-sm text-muted-foreground mb-3">{book.author}</p>
 
+        {/* Progress Info for Reading Books */}
+        {book.status === "READING" && book.currentPage !== undefined && book.pageCount && (
+          <div className="mb-3 pb-3 border-b border-border">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {book.currentPage} / {book.pageCount} Seiten
+              </span>
+              <span className="font-semibold text-primary">
+                {progressPercent}%
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Tags */}
         {book.genres && book.genres.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {book.genres.slice(0, 2).map((genre) => (
-              <Badge 
-                key={genre} 
-                variant="secondary" 
+              <Badge
+                key={genre}
+                variant="secondary"
                 className="text-xs rounded-full px-2 py-0.5"
               >
                 {genre}
