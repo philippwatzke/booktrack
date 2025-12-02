@@ -126,14 +126,17 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
       return;
     }
 
+    const parsedPageCount = pageCount.trim() ? parseInt(pageCount.trim()) : undefined;
+    const parsedPublishedYear = publishedYear.trim() ? parseInt(publishedYear.trim()) : undefined;
+
     createBookMutation.mutate(
       {
         title: title.trim(),
         author: author.trim(),
         description: description.trim() || undefined,
         coverUrl: coverUrl.trim() || undefined,
-        pageCount: pageCount ? parseInt(pageCount) : undefined,
-        publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
+        pageCount: parsedPageCount && parsedPageCount > 0 ? parsedPageCount : undefined,
+        publishedYear: parsedPublishedYear && parsedPublishedYear > 0 ? parsedPublishedYear : undefined,
         publisher: publisher.trim() || undefined,
         language: language.trim() || undefined,
         status,

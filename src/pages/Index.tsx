@@ -1,15 +1,10 @@
 // Dashboard with Streak System
 import { useState, useEffect } from "react";
 import { StreakBadge } from "@/components/Streaks/StreakBadge";
-import { StreakCalendar } from "@/components/Streaks/StreakCalendar";
 import { StreakMilestones } from "@/components/Streaks/StreakMilestones";
-import { RandomQuote } from "@/components/Dashboard/RandomQuote";
-import { MotivationQuote } from "@/components/Dashboard/MotivationQuote";
-import { RecentActivityWidget } from "@/components/Dashboard/RecentActivityWidget";
-import { ReadingPatternsWidget } from "@/components/Dashboard/ReadingPatternsWidget";
-import { PredictiveReadingWidget } from "@/components/Dashboard/PredictiveReadingWidget";
+import { StreakCalendar } from "@/components/Streaks/StreakCalendar";
 import { MonthlyReportWidget } from "@/components/Dashboard/MonthlyReportWidget";
-import { DashboardSettings, useWidgetSettings } from "@/components/Dashboard/DashboardSettings";
+import { YearGoalProgressWidget } from "@/components/Dashboard/YearGoalProgressWidget";
 import { GoalsWidget } from "@/components/Goals/GoalsWidget";
 import { OnboardingDialog } from "@/components/Onboarding/OnboardingDialog";
 import { useBooks } from "@/hooks/useBooks";
@@ -24,7 +19,6 @@ const Index = () => {
   const { data: books = [] } = useBooks();
   const { data: preferences } = usePreferences();
   const { data: dashboardStats, isLoading: isDashboardLoading } = useDashboardStats();
-  const widgetSettings = useWidgetSettings();
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -57,23 +51,20 @@ const Index = () => {
               <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
               <p className="text-muted-foreground">Deine Lese-Übersicht auf einen Blick</p>
             </div>
-            <div className="flex items-center gap-3">
-              <DashboardSettings />
-              {lastReadingBook && (
-                <Button
-                  onClick={() => navigate(`/book/${lastReadingBook.id}`)}
-                  size="lg"
-                  className="rounded-xl gap-2"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  Weiterlesen
-                </Button>
-              )}
-            </div>
+            {lastReadingBook && (
+              <Button
+                onClick={() => navigate(`/book/${lastReadingBook.id}`)}
+                size="lg"
+                className="rounded-xl gap-2"
+              >
+                <BookOpen className="h-5 w-5" />
+                Weiterlesen
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Top Row - Streak Badge */}
+        {/* Streak Badge */}
         <div className="mb-6">
           <StreakBadge />
         </div>
@@ -127,49 +118,24 @@ const Index = () => {
           <GoalsWidget />
         </div>
 
-        {/* Main Content Grid */}
-        <div className="columns-1 lg:columns-2 gap-6 mb-6 space-y-6">
-          {/* Streak Calendar */}
-          {widgetSettings.streakCalendar.enabled && <StreakCalendar />}
+        {/* Dashboard Widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Lese-Aktivität (Kalender) */}
+          <StreakCalendar />
 
           {/* Streak Milestones */}
-          {widgetSettings.streakMilestones.enabled && <StreakMilestones />}
+          <StreakMilestones />
 
-          {/* Dashboard Stats Widgets */}
+          {/* Monthly Report */}
           {!isDashboardLoading && dashboardStats && (
-            <>
-              {widgetSettings.recentActivity.enabled && (
-                <RecentActivityWidget
-                  activities={dashboardStats.recentActivity || []}
-                  defaultCollapsed={widgetSettings.recentActivity.collapsed}
-                />
-              )}
-              {widgetSettings.readingPatterns.enabled && (
-                <ReadingPatternsWidget
-                  patterns={dashboardStats.readingPatterns}
-                  defaultCollapsed={widgetSettings.readingPatterns.collapsed}
-                />
-              )}
-              {widgetSettings.predictiveReading.enabled && (
-                <PredictiveReadingWidget
-                  data={dashboardStats.predictiveReading}
-                  defaultCollapsed={widgetSettings.predictiveReading.collapsed}
-                />
-              )}
-              {widgetSettings.monthlyReport.enabled && (
-                <MonthlyReportWidget
-                  data={dashboardStats.monthlyReport}
-                  defaultCollapsed={widgetSettings.monthlyReport.collapsed}
-                />
-              )}
-            </>
+            <MonthlyReportWidget
+              data={dashboardStats.monthlyReport}
+              defaultCollapsed={false}
+            />
           )}
 
-          {/* Random Quote from Collection */}
-          {widgetSettings.randomQuote.enabled && <RandomQuote />}
-
-          {/* Motivation Quote */}
-          {widgetSettings.motivationQuote.enabled && <MotivationQuote />}
+          {/* Year Goal Progress */}
+          <YearGoalProgressWidget />
         </div>
 
         {/* Onboarding Dialog */}
@@ -197,7 +163,7 @@ const Index = () => {
                 <div
                   key={book.id}
                   className="p-4 rounded-xl border border-border hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => navigate(`/books/${book.id}`)}
+                  onClick={() => navigate(`/book/${book.id}`)}
                 >
                   <div className="flex gap-3">
                     {book.coverUrl ? (

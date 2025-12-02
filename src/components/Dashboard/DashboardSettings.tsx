@@ -23,7 +23,21 @@ export interface WidgetSettings {
   streakMilestones: { enabled: boolean; collapsed: boolean };
   randomQuote: { enabled: boolean; collapsed: boolean };
   motivationQuote: { enabled: boolean; collapsed: boolean };
+  order?: string[]; // Widget order for drag-and-drop
 }
+
+const DEFAULT_WIDGET_ORDER = [
+  'streakBadge',
+  'goalsWidget',
+  'streakCalendar',
+  'streakMilestones',
+  'recentActivity',
+  'readingPatterns',
+  'predictiveReading',
+  'monthlyReport',
+  'randomQuote',
+  'motivationQuote'
+];
 
 const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
   recentActivity: { enabled: true, collapsed: false },
@@ -34,6 +48,7 @@ const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
   streakMilestones: { enabled: true, collapsed: false },
   randomQuote: { enabled: true, collapsed: false },
   motivationQuote: { enabled: true, collapsed: false },
+  order: DEFAULT_WIDGET_ORDER,
 };
 
 const WIDGET_LABELS: Record<keyof WidgetSettings, string> = {

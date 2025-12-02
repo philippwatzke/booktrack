@@ -40,7 +40,7 @@ const mainItems = [
 const organizationItems = [
   { title: "Sammelalbum", url: "/collections", icon: Grid3x3 },
   { title: "Tags & Kategorien", url: "/tags", icon: Tags },
-  { title: "Zitate & Notizen", url: "/quotes", icon: Quote },
+  { title: "Zitate", url: "/quotes", icon: Quote },
 ];
 
 const otherItems = [

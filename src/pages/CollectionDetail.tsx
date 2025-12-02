@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useCollection, useAddBookToCollection, useRemoveBookFromCollection } from "@/hooks/useCollections";
+import { useCollection, useAddBookToCollection, useRemoveBookFromCollection, useUpdateBookInCollection } from "@/hooks/useCollections";
 import { useBooks } from "@/hooks/useBooks";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   Star,
   Calendar,
   User,
+  Edit,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +37,9 @@ export default function CollectionDetail() {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState("");
   const [bookStatus, setBookStatus] = useState("COLLECTED");
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingBookId, setEditingBookId] = useState("");
+  const [editingStatus, setEditingStatus] = useState("COLLECTED");
 
   const { data: collection, isLoading } = useCollection(id!);
   const { data: booksResponse, isLoading: booksLoading } = useBooks();
@@ -43,6 +47,7 @@ export default function CollectionDetail() {
 
   const addBookMutation = useAddBookToCollection();
   const removeBookMutation = useRemoveBookFromCollection();
+  const updateBookMutation = useUpdateBookInCollection();
 
   if (isLoading || booksLoading) {
     return (
@@ -108,12 +113,38 @@ export default function CollectionDetail() {
     });
   };
 
+  const handleEditBook = (bookId: string, currentStatus: string) => {
+    setEditingBookId(bookId);
+    setEditingStatus(currentStatus);
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateBook = () => {
+    if (!editingBookId) return;
+
+    updateBookMutation.mutate(
+      {
+        collectionId: id!,
+        bookId: editingBookId,
+        data: {
+          status: editingStatus,
+        },
+      },
+      {
+        onSuccess: () => {
+          setOpenEditDialog(false);
+          setEditingBookId("");
+          setEditingStatus("COLLECTED");
+        },
+      }
+    );
+  };
+
   const getStatusBadge = (status: string) => {
     const badges = {
       COLLECTED: { label: "Gesammelt", className: "bg-green-500/10 text-green-600 border-green-500/20" },
       WISHLIST: { label: "Wunschliste", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
       MISSING: { label: "Fehlend", className: "bg-red-500/10 text-red-600 border-red-500/20" },
-      DUPLICATE: { label: "Doppelt", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
     };
     const badge = badges[status as keyof typeof badges] || badges.COLLECTED;
     return (
@@ -200,7 +231,6 @@ export default function CollectionDetail() {
                           <SelectItem value="COLLECTED">Gesammelt</SelectItem>
                           <SelectItem value="WISHLIST">Wunschliste</SelectItem>
                           <SelectItem value="MISSING">Fehlend</SelectItem>
-                          <SelectItem value="DUPLICATE">Doppelt</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -228,6 +258,50 @@ export default function CollectionDetail() {
           </Dialog>
         </div>
       </div>
+
+      {/* Edit Book Dialog */}
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Buch bearbeiten</DialogTitle>
+            <DialogDescription>
+              Ändere den Status des Buches in der Kollektion
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={editingStatus} onValueChange={setEditingStatus}>
+                <SelectTrigger className="rounded-xl h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COLLECTED">Gesammelt</SelectItem>
+                  <SelectItem value="WISHLIST">Wunschliste</SelectItem>
+                  <SelectItem value="MISSING">Fehlend</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setOpenEditDialog(false)}
+                className="flex-1 rounded-xl h-12"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleUpdateBook}
+                className="flex-1 rounded-xl h-12"
+                disabled={updateBookMutation.isPending}
+              >
+                Speichern
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Progress Card */}
       <Card className="p-6 rounded-2xl mb-8 border-border">
@@ -306,7 +380,15 @@ export default function CollectionDetail() {
                         alt={book.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleEditBook(book.id, bc.status)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="destructive"
@@ -323,7 +405,15 @@ export default function CollectionDetail() {
                   ) : (
                     <div className="relative h-64 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                       <BookOpen className="h-16 w-16 text-primary opacity-50" />
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleEditBook(book.id, bc.status)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="destructive"

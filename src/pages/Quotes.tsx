@@ -3,8 +3,11 @@ import { Quote as QuoteIcon, BookOpen } from "lucide-react";
 import { quotesApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Quote } from "@/types/book";
+import { useNavigate } from "react-router-dom";
 
 export default function Quotes() {
+  const navigate = useNavigate();
+
   const { data: response, isLoading } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: async () => {
@@ -43,23 +46,37 @@ export default function Quotes() {
             {quotes.map((quote) => (
               <Card
                 key={quote.id}
-                className="p-6 rounded-2xl border-border hover:shadow-md transition-all bg-gradient-to-br from-primary-light/10 to-accent-light/10"
+                className="p-6 rounded-2xl border-border hover:shadow-md transition-all bg-gradient-to-br from-primary-light/10 to-accent-light/10 cursor-pointer"
+                onClick={() => navigate(`/book/${quote.bookId}`)}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    {quote.page && (
-                      <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">
-                        Seite {quote.page}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {quote.book && (
+                      <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                        <BookOpen className="h-4 w-4" />
+                        {quote.book.title}
+                        {quote.book.author && (
+                          <span className="text-muted-foreground ml-1">
+                            · {quote.book.author}
+                          </span>
+                        )}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(quote.createdAt).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  {quote.page && (
+                    <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">
+                      Seite {quote.page}
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(quote.createdAt).toLocaleDateString("de-DE", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
                 <div className="relative">
                   <QuoteIcon className="absolute -left-2 -top-2 h-8 w-8 text-primary/20" />

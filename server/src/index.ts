@@ -9,7 +9,6 @@ import notesRoutes from './routes/notesRoutes.js';
 import streaksRoutes from './routes/streaks.js';
 import goalsRoutes from './routes/goals.js';
 import collectionsRoutes from './routes/collectionsRoutes.js';
-import seriesRoutes from './routes/seriesRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -41,7 +40,6 @@ app.use('/api/notes', notesRoutes);
 app.use('/api/streaks', streaksRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/collections', collectionsRoutes);
-app.use('/api/series', seriesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Error handler (must be last)
