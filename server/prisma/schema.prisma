@@ -25,6 +25,7 @@ model User {
   dailyReadingLog DailyReadingLog[]
   preferences     UserPreferences?
   readingGoals    ReadingGoal[]
+  collections     Collection[]
 
   @@map("users")
 }
@@ -54,6 +55,8 @@ model Book {
   readingSessions ReadingSession[]
   quotes          Quote[]
   notes           Note[]
+  collections     BookCollection[]
+  series          BookSeries[]
 
   @@index([userId])
   @@index([status])
@@ -179,6 +182,71 @@ model ReadingGoal {
   @@index([userId])
   @@index([type])
   @@map("reading_goals")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // GENRE, AUTHOR, SERIES, THEME, YEAR
+  name        String
+  description String?
+  targetCount Int?     // How many books should be in the collection?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  books BookCollection[]
+
+  @@index([userId])
+  @@index([type])
+  @@map("collections")
+}
+
+model BookCollection {
+  id           String    @id @default(cuid())
+  collectionId String
+  bookId       String
+  status       String    // COLLECTED, WISHLIST, MISSING, DUPLICATE
+  order        Int?
+  acquiredAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  book       Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, bookId])
+  @@index([collectionId])
+  @@index([bookId])
+  @@map("book_collections")
+}
+
+model Series {
+  id         String   @id @default(cuid())
+  name       String
+  author     String?
+  totalBooks Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  books BookSeries[]
+
+  @@map("series")
+}
+
+model BookSeries {
+  id        String   @id @default(cuid())
+  seriesId  String
+  bookId    String
+  order     Int
+  createdAt DateTime @default(now())
+
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, bookId])
+  @@index([seriesId])
+  @@index([bookId])
+  @@map("book_series")
 }
 
 // BookStatus is now a String field with values: WANT_TO_READ, READING, FINISHED

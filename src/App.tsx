@@ -16,6 +16,8 @@ import Quotes from "./pages/Quotes";
 import Stats from "./pages/Stats";
 import Settings from "./pages/Settings";
 import BookDetail from "./pages/BookDetail";
+import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="/reading" element={<Reading />} />
               <Route path="/finished" element={<Finished />} />
               <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/collections" element={<Collections />} />
+              <Route path="/collections/:id" element={<CollectionDetail />} />
               <Route path="/tags" element={<Tags />} />
               <Route path="/quotes" element={<Quotes />} />
               <Route path="/stats" element={<Stats />} />

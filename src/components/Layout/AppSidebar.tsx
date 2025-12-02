@@ -8,7 +8,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Grid3x3
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -37,6 +38,7 @@ const mainItems = [
 ];
 
 const organizationItems = [
+  { title: "Sammelalbum", url: "/collections", icon: Grid3x3 },
   { title: "Tags & Kategorien", url: "/tags", icon: Tags },
   { title: "Zitate & Notizen", url: "/quotes", icon: Quote },
 ];

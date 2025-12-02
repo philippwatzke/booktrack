@@ -282,3 +282,127 @@ export const goalsApi = {
     return response.json();
   },
 };
+
+// Collections API
+export const collectionsApi = {
+  getAll: async (params?: { type?: string }) => {
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    const response = await fetchWithAuth(`/collections${query ? `?${query}` : ''}`);
+    return response.json();
+  },
+
+  getById: async (id: string) => {
+    const response = await fetchWithAuth(`/collections/${id}`);
+    return response.json();
+  },
+
+  create: async (data: any) => {
+    const response = await fetchWithAuth('/collections', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  update: async (id: string, data: any) => {
+    const response = await fetchWithAuth(`/collections/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  delete: async (id: string) => {
+    const response = await fetchWithAuth(`/collections/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  addBook: async (collectionId: string, data: any) => {
+    const response = await fetchWithAuth(`/collections/${collectionId}/books`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  removeBook: async (collectionId: string, bookId: string) => {
+    const response = await fetchWithAuth(`/collections/${collectionId}/books/${bookId}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  updateBook: async (collectionId: string, bookId: string, data: any) => {
+    const response = await fetchWithAuth(`/collections/${collectionId}/books/${bookId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+};
+
+// Series API
+export const seriesApi = {
+  getAll: async () => {
+    const response = await fetchWithAuth('/series');
+    return response.json();
+  },
+
+  getById: async (id: string) => {
+    const response = await fetchWithAuth(`/series/${id}`);
+    return response.json();
+  },
+
+  getUserSeries: async () => {
+    const response = await fetchWithAuth('/series/user/my-series');
+    return response.json();
+  },
+
+  create: async (data: any) => {
+    const response = await fetchWithAuth('/series', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  update: async (id: string, data: any) => {
+    const response = await fetchWithAuth(`/series/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  delete: async (id: string) => {
+    const response = await fetchWithAuth(`/series/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  addBook: async (seriesId: string, data: any) => {
+    const response = await fetchWithAuth(`/series/${seriesId}/books`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  removeBook: async (seriesId: string, bookId: string) => {
+    const response = await fetchWithAuth(`/series/${seriesId}/books/${bookId}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  updateBook: async (seriesId: string, bookId: string, data: any) => {
+    const response = await fetchWithAuth(`/series/${seriesId}/books/${bookId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+};
