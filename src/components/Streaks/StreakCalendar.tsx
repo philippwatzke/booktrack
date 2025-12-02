@@ -80,7 +80,7 @@ export function StreakCalendar() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 rounded-2xl border-border shadow-md">
+      <Card className="p-6 rounded-2xl border-border shadow-md break-inside-avoid">
         <h3 className="text-xl font-bold text-foreground mb-4">Lese-Aktivität</h3>
         <div className="animate-pulse flex gap-1">
           {[...Array(12)].map((_, i) => (
@@ -98,7 +98,7 @@ export function StreakCalendar() {
   const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   return (
-    <Card className="p-6 rounded-2xl border-border shadow-md">
+    <Card className="p-6 rounded-2xl border-border shadow-md break-inside-avoid">
       <h3 className="text-xl font-bold text-foreground mb-4">Lese-Aktivität (letzte 12 Wochen)</h3>
 
       <div className="flex gap-1">

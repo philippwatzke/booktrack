@@ -41,7 +41,7 @@ export function RandomQuote() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 rounded-2xl border-border shadow-md">
+      <Card className="p-6 rounded-2xl border-border shadow-md break-inside-avoid">
         <div className="animate-pulse">
           <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
           <div className="h-20 bg-muted rounded"></div>
@@ -52,7 +52,7 @@ export function RandomQuote() {
 
   if (!randomQuote) {
     return (
-      <Card className="p-6 rounded-2xl border-border border-dashed text-center">
+      <Card className="p-6 rounded-2xl border-border border-dashed text-center break-inside-avoid">
         <QuoteIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
         <p className="text-sm text-muted-foreground">
           Noch keine Zitate gespeichert.
@@ -65,7 +65,7 @@ export function RandomQuote() {
   }
 
   return (
-    <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-primary/5 to-accent/5">
+    <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-primary/5 to-accent/5 break-inside-avoid">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">

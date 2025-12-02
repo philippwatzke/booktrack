@@ -15,8 +15,15 @@ export const deserializeArray = (str?: string | null): string[] => {
 };
 
 export const transformBookFromDb = (book: any) => {
+  // Fix HTTP cover URLs to HTTPS to avoid mixed content issues
+  let coverUrl = book.coverUrl;
+  if (coverUrl && coverUrl.startsWith('http://')) {
+    coverUrl = coverUrl.replace('http://', 'https://');
+  }
+
   return {
     ...book,
+    coverUrl,
     genres: deserializeArray(book.genres),
     tags: deserializeArray(book.tags),
   };
