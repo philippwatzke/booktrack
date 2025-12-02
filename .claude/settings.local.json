@@ -17,7 +17,14 @@
       "Bash(npx prisma generate:*)",
       "Bash(npm install:*)",
       "Bash(git add:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(psql:*)",
+      "Bash(docker --version:*)",
+      "Bash(docker run:*)",
+      "Bash(\"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\bin\\initdb.exe\" -D \"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\data\" -U postgres -E UTF8)",
+      "Bash(\"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\bin\\pg_ctl.exe\" -D \"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\data\" -l \"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\logfile.log\" start)",
+      "Bash(\"C:\\Users\\p.watzke\\postgresql-18.1-1-windows-x64-binaries\\pgsql\\bin\\createdb.exe\" -U postgres booktrack)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

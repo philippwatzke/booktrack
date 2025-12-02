@@ -62,6 +62,8 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
   const [coverUrl, setCoverUrl] = useState("");
   const [pageCount, setPageCount] = useState("");
   const [publishedYear, setPublishedYear] = useState("");
+  const [publisher, setPublisher] = useState("");
+  const [language, setLanguage] = useState("");
   const [status, setStatus] = useState<BookStatus>("WANT_TO_READ");
   const [isbn, setIsbn] = useState("");
 
@@ -101,9 +103,13 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
     setTitle(book.title);
     setAuthor(book.author);
     setDescription(book.description || "");
-    setCoverUrl(book.coverUrl || "");
+    // Fix HTTP to HTTPS for cover URLs
+    const fixedCoverUrl = book.coverUrl ? book.coverUrl.replace('http://', 'https://') : "";
+    setCoverUrl(fixedCoverUrl);
     setPageCount(book.pageCount?.toString() || "");
     setPublishedYear(book.publishedYear?.toString() || "");
+    setPublisher(book.publisher || "");
+    setLanguage(book.language || "");
     setIsbn(book.isbn || book.isbn13 || "");
     setMode('manual'); // Switch to manual mode to show filled form
   };
@@ -128,6 +134,8 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
         coverUrl: coverUrl.trim() || undefined,
         pageCount: pageCount ? parseInt(pageCount) : undefined,
         publishedYear: publishedYear ? parseInt(publishedYear) : undefined,
+        publisher: publisher.trim() || undefined,
+        language: language.trim() || undefined,
         status,
         isbn: isbn.trim() || undefined,
         genres: selectedBook?.genres || [],
@@ -154,6 +162,8 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
     setCoverUrl("");
     setPageCount("");
     setPublishedYear("");
+    setPublisher("");
+    setLanguage("");
     setStatus("WANT_TO_READ");
     setIsbn("");
     setMode('search');
@@ -216,13 +226,19 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                     onClick={() => handleSelectBook(book)}
                   >
                     <div className="flex gap-4">
-                      {book.coverUrl && (
-                        <img
-                          src={book.coverUrl}
-                          alt={book.title}
-                          className="w-16 h-24 object-cover rounded-lg"
-                        />
-                      )}
+                      <div className="relative w-16 h-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                        {book.coverUrl ? (
+                          <img
+                            src={book.coverUrl}
+                            alt={book.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <span className="text-xl font-bold text-primary/30">{book.title[0]}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm line-clamp-2 mb-1">
                           {book.title}
@@ -354,6 +370,29 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                     placeholder="z.B. 2023"
                     value={publishedYear}
                     onChange={(e) => setPublishedYear(e.target.value)}
+                    className="rounded-xl h-11"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="publisher">Verlag</Label>
+                  <Input
+                    id="publisher"
+                    placeholder="z.B. Loewe Verlag"
+                    value={publisher}
+                    onChange={(e) => setPublisher(e.target.value)}
+                    className="rounded-xl h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="language">Sprache</Label>
+                  <Input
+                    id="language"
+                    placeholder="z.B. de, en"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
                     className="rounded-xl h-11"
                   />
                 </div>

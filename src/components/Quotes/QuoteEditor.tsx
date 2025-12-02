@@ -100,25 +100,6 @@ export function QuoteEditor({ bookId, totalPages }: QuoteEditorProps) {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="page">Seite (optional)</Label>
-              <Input
-                id="page"
-                type="number"
-                min="1"
-                max={totalPages || undefined}
-                placeholder="z.B. 42"
-                value={page}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  if (!totalPages || val <= totalPages || e.target.value === '') {
-                    setPage(e.target.value);
-                  }
-                }}
-                className="rounded-xl h-11"
-              />
-              {totalPages && <p className="text-xs text-muted-foreground">Max: {totalPages} Seiten</p>}
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="text">Zitat</Label>
               <Textarea
                 id="text"
@@ -127,6 +108,25 @@ export function QuoteEditor({ bookId, totalPages }: QuoteEditorProps) {
                 onChange={(e) => setText(e.target.value)}
                 className="rounded-xl min-h-[200px] resize-none"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="page">Seite</Label>
+              <Input
+                id="page"
+                type="number"
+                min="1"
+                max={totalPages || undefined}
+                placeholder="z.B. 42 (optional)"
+                value={page}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!totalPages || val <= totalPages || e.target.value === '') {
+                    setPage(e.target.value);
+                  }
+                }}
+                className="rounded-xl h-12 text-center text-lg font-semibold"
+              />
+              {totalPages && <p className="text-xs text-muted-foreground text-center">Max: {totalPages} Seiten</p>}
             </div>
           </div>
           <div className="flex gap-3">

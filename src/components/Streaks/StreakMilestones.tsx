@@ -54,7 +54,7 @@ export function StreakMilestones() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 rounded-2xl border-border shadow-md">
+      <Card className="p-6 rounded-2xl border-border shadow-md break-inside-avoid">
         <h3 className="text-xl font-bold text-foreground mb-4">Meilensteine</h3>
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
@@ -73,7 +73,7 @@ export function StreakMilestones() {
   const currentStreak = streak.currentStreak;
 
   return (
-    <Card className="p-6 rounded-2xl border-border shadow-md">
+    <Card className="p-6 rounded-2xl border-border shadow-md break-inside-avoid">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-bold text-foreground">Meilensteine</h3>
         <Badge variant="outline" className="rounded-full">

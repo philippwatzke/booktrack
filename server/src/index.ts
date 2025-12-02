@@ -8,6 +8,7 @@ import quotesRoutes from './routes/quotesRoutes.js';
 import notesRoutes from './routes/notesRoutes.js';
 import streaksRoutes from './routes/streaks.js';
 import goalsRoutes from './routes/goals.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -37,6 +38,7 @@ app.use('/api/quotes', quotesRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/streaks', streaksRoutes);
 app.use('/api/goals', goalsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
