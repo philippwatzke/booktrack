@@ -63,10 +63,23 @@ export async function searchBooks(query: string, maxResults: number = 10): Promi
     });
 
     if (!response.data.items || response.data.items.length === 0) {
+      console.log('📚 Google Books API: No results found for query:', query);
       return [];
     }
 
-    return response.data.items.map(transformGoogleBookToSearchResult).filter(Boolean) as BookSearchResult[];
+    console.log(`📚 Google Books API: Found ${response.data.items.length} books for query:`, query);
+    const results = response.data.items.map(transformGoogleBookToSearchResult).filter(Boolean) as BookSearchResult[];
+
+    // Log which books have cover URLs with detailed info
+    results.forEach((book, index) => {
+      const coverStatus = book.coverUrl ? '✅ Has cover' : '❌ No cover';
+      console.log(`  [${index + 1}] ${book.title} by ${book.author}: ${coverStatus}`);
+      if (book.coverUrl) {
+        console.log(`      Cover URL (length: ${book.coverUrl.length}): ${book.coverUrl}`);
+      }
+    });
+
+    return results;
   } catch (error: any) {
     console.error('Google Books API error:', error.message);
 
@@ -140,12 +153,14 @@ function transformGoogleBookToSearchResult(volume: GoogleBookVolume): BookSearch
   // Get best cover image
   let coverUrl: string | undefined;
   if (info.imageLinks?.thumbnail) {
-    // Remove edge curl and zoom parameters, get higher quality
+    // Remove edge curl, upgrade to HTTPS, and get higher quality
     coverUrl = info.imageLinks.thumbnail
+      .replace('http://', 'https://') // Force HTTPS to avoid mixed content issues
       .replace('&edge=curl', '')
-      .replace('zoom=1', 'zoom=2');
+      .replace('zoom=1', 'zoom=2'); // Use zoom=2 for better compatibility
   } else if (info.imageLinks?.smallThumbnail) {
-    coverUrl = info.imageLinks.smallThumbnail;
+    // Also upgrade small thumbnail to HTTPS
+    coverUrl = info.imageLinks.smallThumbnail.replace('http://', 'https://');
   }
 
   // Get genres from categories

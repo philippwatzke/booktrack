@@ -105,7 +105,7 @@ export function MotivationQuote() {
   };
 
   return (
-    <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-accent/5 to-primary/5">
+    <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-accent/5 to-primary/5 break-inside-avoid">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">

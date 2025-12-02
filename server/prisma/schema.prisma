@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -64,15 +64,25 @@ model Book {
 }
 
 model ReadingSession {
-  id        String   @id @default(cuid())
-  userId    String
-  bookId    String
-  duration  Int      // Duration in seconds
-  pagesRead Int
-  startPage Int
-  endPage   Int
-  notes     String?
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  bookId         String
+  duration       Int      // Duration in seconds
+  pagesRead      Int
+  startPage      Int
+  endPage        Int
+  notes          String?
+
+  // Session Timer Improvements (2.4)
+  location       String?  // HOME, COMMUTE, CAFE, TRAVEL, OTHER
+  timeOfDay      String?  // MORNING, AFTERNOON, EVENING, NIGHT
+  mood           String?  // FOCUSED, RELAXED, TIRED, ENERGETIC
+  targetDuration Int?     // Target duration in seconds (for countdown timer)
+  targetPages    Int?     // Target pages to read
+  quality        Int?     // 1-5 rating of session quality
+  reflection     String?  // Post-session thoughts
+
+  createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
@@ -157,6 +167,8 @@ model UserPreferences {
   notificationTime      String?  // "20:00"
   favoriteGenres        String?  // JSON array of genres
   hasCompletedOnboarding Boolean @default(false)
+  // Dashboard Personalization (2.1)
+  dashboardWidgets      String?  // JSON: { "recentActivity": { "enabled": true, "collapsed": false }, ... }
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

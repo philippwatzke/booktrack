@@ -7,9 +7,8 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.error('Error:', err);
-
   if (err instanceof ZodError) {
+    console.error('Validation error:', JSON.stringify(err.errors, null, 2));
     res.status(400).json({
       success: false,
       error: 'Validierungsfehler',
@@ -20,6 +19,8 @@ export const errorHandler = (
     });
     return;
   }
+
+  console.error('Error:', err.message, err.stack);
 
   if (err.name === 'JsonWebTokenError') {
     res.status(401).json({

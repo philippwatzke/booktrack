@@ -406,3 +406,11 @@ export const seriesApi = {
     return response.json();
   },
 };
+
+// Dashboard API
+export const dashboardApi = {
+  getStats: async () => {
+    const response = await fetchWithAuth('/dashboard/stats');
+    return response.json();
+  },
+};

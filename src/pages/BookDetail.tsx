@@ -231,14 +231,17 @@ export default function BookDetail() {
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full rounded-xl bg-muted p-1">
-                <TabsTrigger value="overview" className="flex-1 rounded-lg">
+              <TabsList className="grid w-full grid-cols-4 rounded-xl bg-muted p-1">
+                <TabsTrigger value="overview" className="rounded-lg">
                   Übersicht
                 </TabsTrigger>
-                <TabsTrigger value="notes" className="flex-1 rounded-lg">
+                <TabsTrigger value="sessions" className="rounded-lg">
+                  Sessions
+                </TabsTrigger>
+                <TabsTrigger value="notes" className="rounded-lg">
                   Notizen
                 </TabsTrigger>
-                <TabsTrigger value="quotes" className="flex-1 rounded-lg">
+                <TabsTrigger value="quotes" className="rounded-lg">
                   Zitate
                 </TabsTrigger>
               </TabsList>
@@ -259,6 +262,107 @@ export default function BookDetail() {
                     </div>
                   )}
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="sessions" className="mt-6">
+                <div className="space-y-4">
+                  {book.readingSessions && book.readingSessions.length > 0 ? (
+                    book.readingSessions.map((session: any) => (
+                      <Card key={session.id} className="p-5 rounded-2xl border-border">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-5 w-5 text-primary" />
+                            <div>
+                              <div className="font-semibold text-foreground">
+                                {new Date(session.createdAt).toLocaleDateString('de-DE', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {Math.floor(session.duration / 60)} Minuten • Seite {session.startPage} - {session.endPage}
+                              </div>
+                            </div>
+                          </div>
+                          {session.quality && (
+                            <Badge variant="secondary" className="rounded-full">
+                              Fokus: {session.quality}/5
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-3 mb-4">
+                          <div className="bg-muted/50 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-foreground">{session.pagesRead}</div>
+                            <div className="text-xs text-muted-foreground">Seiten</div>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-foreground">
+                              {Math.round((session.pagesRead / (session.duration / 3600)))}
+                            </div>
+                            <div className="text-xs text-muted-foreground">S/h</div>
+                          </div>
+                          {session.location && (
+                            <div className="bg-muted/50 rounded-lg p-2 text-center">
+                              <div className="text-sm font-medium text-foreground">
+                                {session.location === 'HOME' ? '🏠' :
+                                 session.location === 'COMMUTE' ? '🚆' :
+                                 session.location === 'CAFE' ? '☕' :
+                                 session.location === 'TRAVEL' ? '✈️' : '📍'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {session.location === 'HOME' ? 'Zuhause' :
+                                 session.location === 'COMMUTE' ? 'Unterwegs' :
+                                 session.location === 'CAFE' ? 'Café' :
+                                 session.location === 'TRAVEL' ? 'Reise' : 'Sonstiges'}
+                              </div>
+                            </div>
+                          )}
+                          {session.timeOfDay && (
+                            <div className="bg-muted/50 rounded-lg p-2 text-center">
+                              <div className="text-sm font-medium text-foreground">
+                                {session.timeOfDay === 'MORNING' ? '🌅' :
+                                 session.timeOfDay === 'AFTERNOON' ? '☀️' :
+                                 session.timeOfDay === 'EVENING' ? '🌆' : '🌙'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {session.timeOfDay === 'MORNING' ? 'Morgen' :
+                                 session.timeOfDay === 'AFTERNOON' ? 'Mittag' :
+                                 session.timeOfDay === 'EVENING' ? 'Abend' : 'Nacht'}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {session.notes && (
+                          <div className="mt-4 pt-4 border-t border-border">
+                            <div className="text-sm font-medium text-foreground mb-2">Session-Notizen</div>
+                            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                              {session.notes}
+                            </p>
+                          </div>
+                        )}
+                      </Card>
+                    ))
+                  ) : (
+                    <Card className="p-8 rounded-2xl border-border text-center">
+                      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                      <p className="text-muted-foreground">
+                        Noch keine Lese-Sessions vorhanden
+                      </p>
+                      <Button
+                        onClick={() => setSessionOpen(true)}
+                        variant="outline"
+                        className="mt-4 rounded-xl"
+                      >
+                        <Play className="mr-2 h-4 w-4" />
+                        Erste Session starten
+                      </Button>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="notes" className="mt-6">

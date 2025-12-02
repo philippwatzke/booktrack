@@ -36,6 +36,14 @@ export const CreateReadingSessionSchema = z.object({
   startPage: z.number().int().min(0),
   endPage: z.number().int().min(0),
   notes: z.string().optional(),
+  // Session Timer Improvements (2.4)
+  location: z.enum(['HOME', 'COMMUTE', 'CAFE', 'TRAVEL', 'OTHER']).optional(),
+  timeOfDay: z.enum(['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT']).optional(),
+  mood: z.enum(['FOCUSED', 'RELAXED', 'TIRED', 'ENERGETIC']).optional(),
+  targetDuration: z.number().int().min(0).optional(),
+  targetPages: z.number().int().min(0).optional(),
+  quality: z.number().int().min(1).max(5).optional(),
+  reflection: z.string().optional(),
 });
 
 export const UpdateReadingSessionSchema = z.object({
@@ -44,6 +52,13 @@ export const UpdateReadingSessionSchema = z.object({
   startPage: z.number().int().min(0).optional(),
   endPage: z.number().int().min(0).optional(),
   notes: z.string().optional(),
+  location: z.enum(['HOME', 'COMMUTE', 'CAFE', 'TRAVEL', 'OTHER']).optional(),
+  timeOfDay: z.enum(['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT']).optional(),
+  mood: z.enum(['FOCUSED', 'RELAXED', 'TIRED', 'ENERGETIC']).optional(),
+  targetDuration: z.number().int().min(0).optional(),
+  targetPages: z.number().int().min(0).optional(),
+  quality: z.number().int().min(1).max(5).optional(),
+  reflection: z.string().optional(),
 });
 
 export type CreateReadingSessionInput = z.infer<typeof CreateReadingSessionSchema>;
