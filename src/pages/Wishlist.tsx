@@ -1,96 +1,208 @@
-import { BookCard } from "@/components/Books/BookCard";
-import { useBooks } from "@/hooks/useBooks";
-import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { NatureBackground } from "@/components/nature/NatureBackground";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookmarkPlus, Flame } from "lucide-react";
+import {
+  Heart,
+  ShoppingCart,
+  ExternalLink,
+  Star,
+  BookOpen,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useBooks } from "@/hooks/useBooks";
+import { useUpdateBook, useDeleteBook } from "@/hooks/useBooks";
+import { useNavigate } from "react-router-dom";
+
+const priorityColors: Record<string, string> = {
+  high: "bg-destructive/20 text-destructive border-destructive/30",
+  medium: "bg-amber-warm/20 text-amber-glow border-amber-warm/30",
+  low: "bg-secondary text-secondary-foreground border-secondary",
+};
+
+const priorityLabels: Record<string, string> = {
+  high: "Hohe Priorität",
+  medium: "Mittlere Priorität",
+  low: "Niedrige Priorität",
+};
 
 export default function Wishlist() {
   const navigate = useNavigate();
   const { data: books = [], isLoading } = useBooks({ status: "WANT_TO_READ" });
-  const wishlistBooks = books;
+  const updateBook = useUpdateBook();
+  const deleteBook = useDeleteBook();
 
-  const sortedBooks = [...wishlistBooks].sort((a, b) =>
-    (b.priority || 0) - (a.priority || 0)
-  );
+  const getPriorityLevel = (priority?: number) => {
+    if (!priority) return "low";
+    if (priority >= 4) return "high";
+    if (priority >= 2) return "medium";
+    return "low";
+  };
 
-  const highPriorityBooks = wishlistBooks.filter((book) => (book.priority || 0) >= 4).length;
+  const handleStartReading = (bookId: string) => {
+    updateBook.mutate({ id: bookId, data: { status: "READING" } });
+  };
+
+  const handleDelete = (bookId: string) => {
+    if (confirm("Möchtest du dieses Buch wirklich von deiner Wunschliste entfernen?")) {
+      deleteBook.mutate(bookId);
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Bücher werden geladen...</p>
+      <MainLayout>
+        <NatureBackground />
+        <div className="relative p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Bücher werden geladen...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+    <MainLayout>
+      <NatureBackground />
+
+      <div className="relative p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Wunschliste</h1>
-          <p className="text-muted-foreground">
-            {wishlistBooks.length} {wishlistBooks.length === 1 ? "Buch" : "Bücher"} auf deiner Liste
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-foreground mb-2 flex items-center gap-3">
+              <Heart className="w-10 h-10 text-destructive fill-destructive/20" />
+              Wunschliste
+            </h1>
+            <p className="text-muted-foreground">
+              {books.length} Bücher warten darauf, gelesen zu werden
+            </p>
+          </div>
+
+          <Button className="gap-2" onClick={() => navigate("/search")}>
+            <Plus className="w-4 h-4" />
+            Buch hinzufügen
+          </Button>
         </div>
 
-        {/* Priority Info */}
-        {highPriorityBooks > 0 && (
-          <Card className="p-6 rounded-2xl border-border shadow-md mb-8 bg-gradient-to-br from-primary-light/40 to-accent-light/30">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Flame className="h-6 w-6 text-primary" />
+        {books.length === 0 ? (
+          <Card className="bg-card/80 backdrop-blur-sm border-border">
+            <CardContent className="p-12 text-center">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+                <Heart className="h-8 w-8 text-muted-foreground" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-1">
-                  {highPriorityBooks} {highPriorityBooks === 1 ? "Buch hat" : "Bücher haben"} hohe Priorität
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Diese Bücher warten darauf, gelesen zu werden
-                </p>
-              </div>
-            </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Deine Wunschliste ist leer
+              </h3>
+              <p className="text-muted-foreground">
+                Füge Bücher hinzu, die du gerne lesen möchtest
+              </p>
+            </CardContent>
           </Card>
-        )}
-
-        {/* Books Grid */}
-        {sortedBooks.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {sortedBooks.map((book) => (
-              <div key={book.id} className="relative">
-                {book.priority && book.priority >= 4 && (
-                  <Badge 
-                    className="absolute -top-2 -right-2 z-10 rounded-full bg-primary text-primary-foreground shadow-lg"
-                  >
-                    <Flame className="h-3 w-3 mr-1" />
-                    Priorität {book.priority}
-                  </Badge>
-                )}
-                <BookCard
-                  book={book}
-                  onClick={() => navigate(`/book/${book.id}`)}
-                />
-              </div>
-            ))}
-          </div>
         ) : (
-          <Card className="p-12 rounded-2xl border-border text-center">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-              <BookmarkPlus className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Deine Wunschliste ist leer
-            </h3>
-            <p className="text-muted-foreground">
-              Füge Bücher hinzu, die du gerne lesen möchtest
-            </p>
-          </Card>
+          /* Wishlist Grid */
+          <div className="grid md:grid-cols-2 gap-6">
+            {books.map((book, index) => {
+              const priorityLevel = getPriorityLevel(book.priority);
+              const formattedDate = new Date(book.createdAt).toLocaleDateString('de-DE', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              });
+
+              return (
+                <Card
+                  key={book.id}
+                  className="group bg-card/80 backdrop-blur-sm border-border hover:shadow-xl transition-all duration-300 animate-fade-in overflow-hidden"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardContent className="p-0">
+                    <div className="flex">
+                      <div className="relative w-32 flex-shrink-0">
+                        <img
+                          src={book.coverUrl || "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=300&fit=crop"}
+                          alt={book.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
+                      </div>
+
+                      <div className="flex-1 p-5 flex flex-col">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <h3 className="font-serif font-bold text-lg text-foreground line-clamp-1">
+                              {book.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {book.author}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(book.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <Badge variant="outline" className={priorityColors[priorityLevel]}>
+                            {priorityLabels[priorityLevel]}
+                          </Badge>
+                          {book.genres && book.genres.length > 0 && (
+                            <Badge variant="outline">{book.genres[0]}</Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                          {book.rating && (
+                            <span className="flex items-center gap-1">
+                              <Star className="w-4 h-4 fill-amber-warm text-amber-warm" />
+                              {book.rating}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="w-4 h-4" />
+                            {book.pageCount} Seiten
+                          </span>
+                        </div>
+
+                        <div className="mt-auto flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-2"
+                            onClick={() => handleStartReading(book.id)}
+                          >
+                            <BookOpen className="w-4 h-4" />
+                            Lesen starten
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => navigate(`/book/${book.id}`)}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Hinzugefügt am {formattedDate}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

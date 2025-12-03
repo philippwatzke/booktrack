@@ -1,192 +1,270 @@
-import { useState, useMemo } from "react";
-import { BookCard } from "@/components/Books/BookCard";
-import { useBooks } from "@/hooks/useBooks";
-import { Input } from "@/components/ui/input";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { NatureBackground } from "@/components/nature/NatureBackground";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Search, SlidersHorizontal } from "lucide-react";
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Star,
+  BookOpen,
+  Plus,
+} from "lucide-react";
+import { useState } from "react";
+import { useBooks } from "@/hooks/useBooks";
 import { useNavigate } from "react-router-dom";
-import { AddBookDialog } from "@/components/Books/AddBookDialog";
+
+const statusLabels: Record<string, string> = {
+  FINISHED: "Gelesen",
+  READING: "Lese ich",
+  WANT_TO_READ: "Wunschliste",
+};
+
+const statusColors: Record<string, string> = {
+  FINISHED: "bg-primary text-primary-foreground",
+  READING: "bg-amber-warm text-accent-foreground",
+  WANT_TO_READ: "bg-secondary text-secondary-foreground",
+};
 
 export default function Library() {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  const { data: books = [], isLoading, error } = useBooks();
+  const { data: books = [], isLoading } = useBooks({});
 
-  const allGenres = useMemo(() =>
-    Array.from(new Set(books.flatMap((book) => book.genres || []))),
-    [books]
+  const filteredBooks = books.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredBooks = useMemo(() =>
-    books.filter((book) => {
-      const matchesSearch =
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesGenre =
-        !selectedGenre || book.genres?.includes(selectedGenre);
-      const matchesStatus =
-        selectedStatuses.length === 0 || selectedStatuses.includes(book.status);
-      return matchesSearch && matchesGenre && matchesStatus;
-    }),
-    [books, searchQuery, selectedGenre, selectedStatuses]
-  );
-
-  const toggleStatus = (status: string) => {
-    setSelectedStatuses((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    );
+  const calculateProgress = (book: any) => {
+    if (!book.currentPage || !book.pageCount) return 0;
+    return Math.round((book.currentPage / book.pageCount) * 100);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Bücher werden geladen...</p>
+      <MainLayout>
+        <NatureBackground />
+        <div className="relative p-8 max-w-7xl mx-auto">
+          <div className="text-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Bücher werden geladen...</p>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">Fehler beim Laden der Bücher</p>
-          <Button onClick={() => window.location.reload()}>Erneut versuchen</Button>
-        </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+    <MainLayout>
+      <NatureBackground />
+
+      <div className="relative p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">Bibliothek</h1>
-              <p className="text-muted-foreground">
-                {filteredBooks.length} {filteredBooks.length === 1 ? "Buch" : "Bücher"} gefunden
-              </p>
-            </div>
-            <AddBookDialog />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-foreground mb-2">
+              Meine Bibliothek
+            </h1>
+            <p className="text-muted-foreground">
+              {books.length} Bücher in deiner Sammlung
+            </p>
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Suche nach Titel oder Autor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 rounded-xl border-border bg-card shadow-sm"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="rounded-xl h-12 px-6 border-border shadow-sm"
-                >
-                  <SlidersHorizontal className="mr-2 h-5 w-5" />
-                  Filter
-                  {selectedStatuses.length > 0 && (
-                    <Badge variant="default" className="ml-2 rounded-full px-2 py-0 text-xs">
-                      {selectedStatuses.length}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Status filtern</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={selectedStatuses.includes("WANT_TO_READ")}
-                  onCheckedChange={() => toggleStatus("WANT_TO_READ")}
-                >
-                  Wunschliste
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={selectedStatuses.includes("READING")}
-                  onCheckedChange={() => toggleStatus("READING")}
-                >
-                  Aktuell lesen
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={selectedStatuses.includes("FINISHED")}
-                  onCheckedChange={() => toggleStatus("FINISHED")}
-                >
-                  Gelesen
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <Button className="gap-2" onClick={() => navigate('/library')}>
+            <Plus className="w-4 h-4" />
+            Buch hinzufügen
+          </Button>
+        </div>
+
+        {/* Filters & Search */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8 animate-fade-in" style={{ animationDelay: "100ms" }}>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Bücher durchsuchen..."
+              className="pl-10 bg-card/80 backdrop-blur-sm border-border"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {/* Genre Filter Pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Badge
-              variant={selectedGenre === null ? "default" : "secondary"}
-              className="cursor-pointer rounded-full px-4 py-1.5 transition-all hover:shadow-md"
-              onClick={() => setSelectedGenre(null)}
-            >
-              Alle
-            </Badge>
-            {allGenres.map((genre) => (
-              <Badge
-                key={genre}
-                variant={selectedGenre === genre ? "default" : "secondary"}
-                className="cursor-pointer rounded-full px-4 py-1.5 transition-all hover:shadow-md"
-                onClick={() => setSelectedGenre(genre)}
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2">
+              <Filter className="w-4 h-4" />
+              Filter
+            </Button>
+
+            <div className="flex border border-border rounded-lg overflow-hidden">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("grid")}
               >
-                {genre}
-              </Badge>
+                <Grid3X3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Book Grid/List */}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredBooks.map((book, index) => (
+              <Card
+                key={book.id}
+                className="group overflow-hidden bg-card/80 backdrop-blur-sm border-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in cursor-pointer"
+                style={{ animationDelay: `${(index + 2) * 50}ms` }}
+                onClick={() => navigate(`/book/${book.id}`)}
+              >
+                <div className="relative aspect-[2/3] overflow-hidden">
+                  <img
+                    src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop"}
+                    alt={book.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Badge
+                    className={`absolute top-2 right-2 ${statusColors[book.status]}`}
+                  >
+                    {statusLabels[book.status]}
+                  </Badge>
+                </div>
+
+                <CardContent className="p-4">
+                  <h3 className="font-serif font-semibold text-foreground truncate mb-1">
+                    {book.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground truncate mb-2">
+                    {book.author}
+                  </p>
+
+                  <div className="flex items-center gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-3 h-3 ${
+                          i < (book.rating || 0)
+                            ? "fill-amber-warm text-amber-warm"
+                            : "text-muted"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {book.status === "READING" && (
+                    <div className="space-y-1">
+                      <Progress
+                        value={calculateProgress(book)}
+                        className="h-1.5"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {book.currentPage} / {book.pageCount} Seiten
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredBooks.map((book, index) => (
+              <Card
+                key={book.id}
+                className="bg-card/80 backdrop-blur-sm border-border hover:shadow-lg transition-all duration-300 animate-fade-in cursor-pointer"
+                style={{ animationDelay: `${(index + 2) * 50}ms` }}
+                onClick={() => navigate(`/book/${book.id}`)}
+              >
+                <CardContent className="p-4 flex gap-4">
+                  <img
+                    src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop"}
+                    alt={book.title}
+                    className="w-16 h-24 object-cover rounded-md"
+                  />
 
-        {/* Book Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredBooks.map((book) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              onClick={() => navigate(`/book/${book.id}`)}
-            />
-          ))}
-        </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-serif font-semibold text-foreground truncate">
+                          {book.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {book.author}
+                        </p>
+                      </div>
+                      <Badge className={statusColors[book.status]}>
+                        {statusLabels[book.status]}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3 h-3 ${
+                              i < (book.rating || 0)
+                                ? "fill-amber-warm text-amber-warm"
+                                : "text-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      {book.genres && book.genres.length > 0 && (
+                        <Badge variant="outline">{book.genres[0]}</Badge>
+                      )}
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" />
+                        {book.pageCount} Seiten
+                      </span>
+                    </div>
+
+                    {book.status === "READING" && (
+                      <div className="mt-2 flex items-center gap-3">
+                        <Progress
+                          value={calculateProgress(book)}
+                          className="h-1.5 flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {calculateProgress(book)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
         {filteredBooks.length === 0 && (
           <div className="text-center py-16">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-              <Search className="h-8 w-8 text-muted-foreground" />
-            </div>
+            <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
               Keine Bücher gefunden
             </h3>
             <p className="text-muted-foreground">
-              Versuche es mit anderen Suchbegriffen oder Filtern
+              {searchQuery ? "Versuche es mit anderen Suchbegriffen" : "Füge dein erstes Buch hinzu"}
             </p>
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

@@ -13,7 +13,10 @@ import Finished from "./pages/Finished";
 import Wishlist from "./pages/Wishlist";
 import Tags from "./pages/Tags";
 import Quotes from "./pages/Quotes";
+import Notes from "./pages/Notes";
+import Goals from "./pages/Goals";
 import Stats from "./pages/Stats";
+import Search from "./pages/Search";
 import Settings from "./pages/Settings";
 import BookDetail from "./pages/BookDetail";
 import Collections from "./pages/Collections";
@@ -51,7 +54,10 @@ const App = () => (
               <Route path="/collections/:id" element={<CollectionDetail />} />
               <Route path="/tags" element={<Tags />} />
               <Route path="/quotes" element={<Quotes />} />
+              <Route path="/notes" element={<Notes />} />
+              <Route path="/goals" element={<Goals />} />
               <Route path="/stats" element={<Stats />} />
+              <Route path="/search" element={<Search />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/book/:id" element={<BookDetail />} />
             </Route>

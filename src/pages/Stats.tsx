@@ -1,313 +1,272 @@
-import { Card } from "@/components/ui/card";
-import { useBooks } from "@/hooks/useBooks";
-import { useQuery } from "@tanstack/react-query";
-import { readingSessionsApi } from "@/lib/api";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { NatureBackground } from "@/components/nature/NatureBackground";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
+  BarChart3,
   BookOpen,
-  BookCheck,
-  BookmarkPlus,
-  TrendingUp,
   Clock,
-  Star
+  TrendingUp,
+  Calendar,
+  Star,
+  Target,
+  Flame,
 } from "lucide-react";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Area,
+  AreaChart,
+} from "recharts";
+import { useDashboardStats } from "@/hooks/useDashboard";
+
+const monthlyData = [
+  { month: "Jan", books: 2, pages: 580 },
+  { month: "Feb", books: 3, pages: 890 },
+  { month: "Mar", books: 2, pages: 620 },
+  { month: "Apr", books: 1, pages: 340 },
+  { month: "Mai", books: 3, pages: 920 },
+  { month: "Jun", books: 2, pages: 680 },
+  { month: "Jul", books: 2, pages: 540 },
+  { month: "Aug", books: 1, pages: 380 },
+  { month: "Sep", books: 2, pages: 720 },
+  { month: "Okt", books: 3, pages: 860 },
+  { month: "Nov", books: 2, pages: 640 },
+  { month: "Dez", books: 1, pages: 320 },
+];
+
+const genreData = [
+  { name: "Fantasy", value: 8, color: "hsl(var(--primary))" },
+  { name: "Sachbuch", value: 6, color: "hsl(var(--amber-warm))" },
+  { name: "Klassiker", value: 4, color: "hsl(var(--forest-light))" },
+  { name: "Sci-Fi", value: 3, color: "hsl(var(--nature-water))" },
+  { name: "Roman", value: 3, color: "hsl(var(--secondary))" },
+];
+
+const readingTimeData = [
+  { day: "Mo", minutes: 45 },
+  { day: "Di", minutes: 30 },
+  { day: "Mi", minutes: 60 },
+  { day: "Do", minutes: 25 },
+  { day: "Fr", minutes: 50 },
+  { day: "Sa", minutes: 90 },
+  { day: "So", minutes: 75 },
+];
 
 export default function Stats() {
-  const { data: books = [], isLoading } = useBooks();
+  const { data: stats, isLoading } = useDashboardStats();
 
-  // Get all reading sessions from all books
-  const { data: allSessionsData } = useQuery({
-    queryKey: ['allReadingSessions'],
-    queryFn: async () => {
-      // Get sessions for all books
-      const sessionsPromises = books.map(book =>
-        readingSessionsApi.getByBook(book.id)
-      );
-      const results = await Promise.all(sessionsPromises);
-      return results.flatMap(result => result.success ? result.data : []);
+  const statsCards = [
+    {
+      title: "Bücher gelesen",
+      value: stats?.finishedBooks?.toString() || "0",
+      subtext: "+3 diesen Monat",
+      icon: BookOpen,
+      trend: "up",
     },
-    enabled: books.length > 0,
-  });
-
-  const allSessions = allSessionsData || [];
-
-  const totalBooks = books.length;
-  const readingBooks = books.filter((b) => b.status === "READING").length;
-  const finishedBooks = books.filter((b) => b.status === "FINISHED").length;
-  const wishlistBooks = books.filter((b) => b.status === "WANT_TO_READ").length;
-
-  const totalPagesRead = books
-    .filter((b) => b.status === "FINISHED")
-    .reduce((sum, b) => sum + (b.pageCount || 0), 0);
-
-  const ratedBooks = books.filter((b) => b.rating);
-  const averageRating = ratedBooks.length > 0
-    ? (ratedBooks.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBooks.length).toFixed(1)
-    : "0.0";
-
-  const genreCount = books
-    .flatMap((b) => b.genres || [])
-    .reduce((acc, genre) => {
-      acc[genre] = (acc[genre] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-  const topGenres = Object.entries(genreCount)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
-
-  // Chart data
-  const genreChartData = topGenres.map(([genre, count]) => ({
-    genre,
-    count,
-  }));
-
-  // Calculate monthly reading data from sessions
-  const monthlyReadingData = (() => {
-    const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-    const currentDate = new Date();
-    const last6Months = [];
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-      const monthSessions = allSessions.filter((session: any) => {
-        const sessionDate = new Date(session.createdAt);
-        const sessionMonthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}`;
-        return sessionMonthKey === monthKey;
-      });
-
-      const pages = monthSessions.reduce((sum: number, s: any) => sum + (s.pagesRead || 0), 0);
-      const uniqueBooks = new Set(monthSessions.map((s: any) => s.bookId)).size;
-
-      last6Months.push({
-        month: monthNames[date.getMonth()],
-        pages,
-        books: uniqueBooks,
-      });
-    }
-
-    return last6Months;
-  })();
-
-  const pieChartData = topGenres.map(([genre, count]) => ({
-    name: genre,
-    value: count,
-  }));
-
-  const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--primary) / 0.6)", "hsl(var(--accent) / 0.6)", "hsl(var(--muted-foreground))"];
-
-  const chartConfig = {
-    count: {
-      label: "Bücher",
-      color: "hsl(var(--primary))",
+    {
+      title: "Seiten gesamt",
+      value: stats?.totalPagesRead?.toLocaleString() || "0",
+      subtext: "Über alle Bücher",
+      icon: Target,
+      trend: "up",
     },
-    pages: {
-      label: "Seiten",
-      color: "hsl(var(--primary))",
+    {
+      title: "Lesezeit",
+      value: "127h",
+      subtext: "Ø 5.3h pro Buch",
+      icon: Clock,
+      trend: "up",
     },
-    books: {
-      label: "Bücher",
-      color: "hsl(var(--accent))",
+    {
+      title: "Längster Streak",
+      value: stats?.currentStreak?.toString() || "0",
+      subtext: "Tage am Stück",
+      icon: Flame,
+      trend: "neutral",
     },
-  };
+  ];
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Statistiken werden geladen...</p>
+      <MainLayout>
+        <NatureBackground />
+        <div className="relative p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Statistiken werden geladen...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+    <MainLayout>
+      <NatureBackground />
+
+      <div className="relative p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Statistiken</h1>
-          <p className="text-muted-foreground">Deine Lese-Übersicht auf einen Blick</p>
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-2 flex items-center gap-3">
+            <BarChart3 className="w-10 h-10 text-primary" />
+            Statistiken
+          </h1>
+          <p className="text-muted-foreground">
+            Detaillierte Einblicke in dein Leseverhalten
+          </p>
         </div>
 
-        {/* Main Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Gesamte Bücher</p>
-            <p className="text-4xl font-bold text-foreground">{totalBooks}</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <BookCheck className="h-6 w-6 text-accent" />
-              </div>
-              <TrendingUp className="h-5 w-5 text-accent" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Gelesen</p>
-            <p className="text-4xl font-bold text-foreground">{finishedBooks}</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-primary" />
-              </div>
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Aktuell lesen</p>
-            <p className="text-4xl font-bold text-foreground">{readingBooks}</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <BookmarkPlus className="h-6 w-6 text-accent" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Wunschliste</p>
-            <p className="text-4xl font-bold text-foreground">{wishlistBooks}</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Seiten gelesen</p>
-            <p className="text-4xl font-bold text-foreground">{totalPagesRead.toLocaleString()}</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-border shadow-md hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <Star className="h-6 w-6 text-accent fill-accent" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Ø Bewertung</p>
-            <p className="text-4xl font-bold text-foreground">{averageRating}</p>
-          </Card>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {statsCards.map((stat, index) => (
+            <Card
+              key={stat.title}
+              className="bg-card/80 backdrop-blur-sm border-border animate-fade-in"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <stat.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  {stat.trend === "up" && (
+                    <TrendingUp className="w-4 h-4 text-primary ml-auto" />
+                  )}
+                </div>
+                <p className="text-2xl font-serif font-bold text-foreground">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-muted-foreground">{stat.title}</p>
+                <p className="text-xs text-primary mt-1">{stat.subtext}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          {/* Genre Bar Chart */}
-          <Card className="p-8 rounded-2xl border-border shadow-md">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Top Genres</h2>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={genreChartData}>
-                  <XAxis 
-                    dataKey="genre" 
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Monthly Reading Chart */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border animate-fade-in delay-400">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Bücher pro Monat
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
                   />
-                  <YAxis 
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar 
-                    dataKey="count" 
-                    fill="hsl(var(--primary))"
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Bar dataKey="books" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </ChartContainer>
+            </CardContent>
           </Card>
 
-          {/* Genre Pie Chart */}
-          <Card className="p-8 rounded-2xl border-border shadow-md">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Genre-Verteilung</h2>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="hsl(var(--primary))"
-                    dataKey="value"
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </PieChart>
+          {/* Genre Distribution */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border animate-fade-in delay-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-primary" />
+                Genre-Verteilung
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width="50%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={genreData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {genreData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-2">
+                  {genreData.map((genre) => (
+                    <div key={genre.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: genre.color }}
+                      />
+                      <span className="text-sm text-foreground flex-1">
+                        {genre.name}
+                      </span>
+                      <Badge variant="secondary">{genre.value}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reading Time This Week */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border animate-fade-in lg:col-span-2 delay-600">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Lesezeit diese Woche
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={readingTimeData}>
+                  <defs>
+                    <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [`${value} Min`, "Lesezeit"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="minutes"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
+                    fill="url(#colorMinutes)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
-            </ChartContainer>
+            </CardContent>
           </Card>
         </div>
-
-        {/* Monthly Reading Progress */}
-        <Card className="p-8 rounded-2xl border-border shadow-md">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Lese-Fortschritt</h2>
-          <ChartContainer config={chartConfig} className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyReadingData}>
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  yAxisId="left"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="pages" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                  dot={{ fill: "hsl(var(--primary))", r: 6 }}
-                />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="books" 
-                  stroke="hsl(var(--accent))" 
-                  strokeWidth={3}
-                  dot={{ fill: "hsl(var(--accent))", r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 }

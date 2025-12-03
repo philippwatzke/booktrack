@@ -1,19 +1,22 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCollections, useCreateCollection } from "@/hooks/useCollections";
 import { useBooks } from "@/hooks/useBooks";
-import { Card } from "@/components/ui/card";
+import { NatureBackground } from "@/components/nature/NatureBackground";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
+  BookMarked,
   Plus,
+  MoreHorizontal,
+  Folder,
+  Lock,
   BookOpen,
   User,
   Calendar,
   Tag,
   TrendingUp,
-  Grid3x3,
-  List,
-  Star,
 } from "lucide-react";
 import {
   Dialog,
@@ -33,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 const COLLECTION_TYPES = [
   { value: "GENRE", label: "Genre", icon: Tag },
   { value: "AUTHOR", label: "Autor", icon: User },
@@ -41,16 +45,23 @@ const COLLECTION_TYPES = [
   { value: "YEAR", label: "Jahr", icon: Calendar },
 ];
 
-export default function Collections() {
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+// Color gradients for collection types
+const COLLECTION_COLORS: Record<string, string> = {
+  GENRE: "from-primary to-forest-light",
+  AUTHOR: "from-amber-warm to-amber-glow",
+  SERIES: "from-nature-water to-nature-water-light",
+  THEME: "from-secondary to-muted",
+  YEAR: "from-purple-600 to-purple-400",
+};
 
-  // Form state for collections
+export default function Collections() {
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [type, setType] = useState("GENRE");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [targetCount, setTargetCount] = useState("");
 
+  const navigate = useNavigate();
   const { data: collections = [], isLoading } = useCollections();
   const { data: booksResponse } = useBooks();
   const books = booksResponse || [];
@@ -78,68 +89,40 @@ export default function Collections() {
     );
   };
 
-  // Auto-generate collections suggestions
-  const getAutoCollectionSuggestions = () => {
-    const suggestions = [];
-
-    // Genre collections
-    const genres = new Set<string>();
-    books.forEach((book: any) => {
-      if (book.genres) {
-        try {
-          const bookGenres = JSON.parse(book.genres);
-          bookGenres.forEach((g: string) => genres.add(g));
-        } catch (e) {
-          // Ignore
-        }
+  // Get book covers for collection preview
+  const getCollectionCovers = (collection: any) => {
+    const collectionBooks = books.filter((book: any) => {
+      if (collection.type === "AUTHOR") {
+        return book.author === collection.name || book.author.includes(collection.name);
       }
-    });
-    genres.forEach((genre) => {
-      const genreBooks = books.filter((b: any) => {
+      if (collection.type === "GENRE") {
         try {
-          const bookGenres = JSON.parse(b.genres || "[]");
-          return bookGenres.includes(genre);
+          const genres = JSON.parse(book.genres || "[]");
+          return genres.includes(collection.name);
         } catch {
           return false;
         }
-      });
-      if (genreBooks.length > 0) {
-        suggestions.push({
-          type: "GENRE",
-          name: genre,
-          count: genreBooks.length,
-        });
       }
+      if (collection.type === "SERIES") {
+        return book.series === collection.name;
+      }
+      return false;
     });
 
-    // Author collections
-    const authors = new Map<string, number>();
-    books.forEach((book: any) => {
-      authors.set(book.author, (authors.get(book.author) || 0) + 1);
-    });
-    Array.from(authors.entries())
-      .filter(([, count]) => count > 1)
-      .forEach(([author, count]) => {
-        suggestions.push({
-          type: "AUTHOR",
-          name: `${author} Collection`,
-          count,
-        });
-      });
-
-    return suggestions.slice(0, 6);
+    return collectionBooks
+      .slice(0, 3)
+      .map((book: any) => book.coverUrl)
+      .filter(Boolean);
   };
-
-  const suggestions = getAutoCollectionSuggestions();
 
   if (isLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-48 bg-muted rounded-2xl"></div>
+              <div key={i} className="h-64 bg-muted rounded-2xl"></div>
             ))}
           </div>
         </div>
@@ -148,47 +131,34 @@ export default function Collections() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
-            <Grid3x3 className="h-8 w-8 text-primary" />
-            Sammelalbum
-          </h1>
-          <p className="text-muted-foreground">
-            Organisiere deine Bücher in thematischen Kollektionen
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-muted rounded-xl p-1">
-            <Button
-              variant={view === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setView("grid")}
-              className="rounded-lg"
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={view === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setView("list")}
-              className="rounded-lg"
-            >
-              <List className="h-4 w-4" />
-            </Button>
+    <div className="min-h-screen">
+      <NatureBackground />
+
+      <div className="relative p-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-foreground mb-2 flex items-center gap-3">
+              <BookMarked className="w-10 h-10 text-primary" />
+              Kollektionen
+            </h1>
+            <p className="text-muted-foreground">
+              Organisiere deine Bücher in thematischen Sammlungen
+            </p>
           </div>
+
           <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
             <DialogTrigger asChild>
-              <Button className="rounded-xl shadow-md">
-                <Plus className="mr-2 h-5 w-5" />
+              <Button className="gap-2 shadow-lg">
+                <Plus className="w-4 h-4" />
                 Neue Kollektion
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] rounded-3xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl">Neue Kollektion erstellen</DialogTitle>
+                <DialogTitle className="text-2xl font-serif">
+                  Neue Kollektion erstellen
+                </DialogTitle>
                 <DialogDescription>
                   Erstelle eine Kollektion, um deine Bücher zu organisieren
                 </DialogDescription>
@@ -270,101 +240,137 @@ export default function Collections() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
-      {/* Collections List */}
-      <div className="space-y-6">
-          {collections.length === 0 ? (
-            <Card className="p-12 rounded-2xl text-center">
-              <Grid3x3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">Keine Kollektionen</h3>
-              <p className="text-muted-foreground mb-6">
-                Erstelle deine erste Kollektion, um Bücher zu organisieren
-              </p>
+        {/* Collections Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {collections.map((collection: any, index: number) => {
+            const TypeIcon =
+              COLLECTION_TYPES.find((ct) => ct.value === collection.type)?.icon || Tag;
+            const covers = getCollectionCovers(collection);
+            const colorGradient =
+              COLLECTION_COLORS[collection.type] || "from-primary to-forest-light";
+            const progress = collection.progress || {
+              collected: 0,
+              wishlist: 0,
+              missing: 0,
+              total: 0,
+              percentage: 0,
+            };
 
-              {suggestions.length > 0 && (
-                <div className="mt-8">
-                  <h4 className="text-sm font-medium mb-4 text-muted-foreground">
-                    Vorschläge basierend auf deiner Bibliothek:
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {suggestions.map((sug, idx) => (
-                      <Button
-                        key={idx}
-                        variant="outline"
-                        className="rounded-xl h-auto py-4"
-                        onClick={() => {
-                          setType(sug.type);
-                          setName(sug.name);
-                          setOpenCreateDialog(true);
-                        }}
-                      >
-                        <div className="text-left">
-                          <div className="font-medium">{sug.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {sug.count} Bücher
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-          ) : (
-            <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-              {collections.map((collection: any) => {
-                const TypeIcon = COLLECTION_TYPES.find((ct) => ct.value === collection.type)?.icon || Tag;
-                const progress = collection.progress;
-
-                return (
-                  <Card
-                    key={collection.id}
-                    className="p-6 rounded-2xl hover:shadow-lg transition-all cursor-pointer border-border"
-                    onClick={() => window.location.href = `/collections/${collection.id}`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-primary/10">
-                          <TypeIcon className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">{collection.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {COLLECTION_TYPES.find((ct) => ct.value === collection.type)?.label}
-                          </p>
-                        </div>
+            return (
+              <Card
+                key={collection.id}
+                className="group bg-card/80 backdrop-blur-sm border-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in cursor-pointer overflow-hidden"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => navigate(`/collections/${collection.id}`)}
+              >
+                {/* Cover Stack with Gradient Background */}
+                <div className={`relative h-32 bg-gradient-to-br ${colorGradient} p-4`}>
+                  <div className="absolute inset-0 bg-black/20" />
+                  <div className="relative flex items-end h-full">
+                    {covers.length > 0 ? (
+                      <div className="flex -space-x-8">
+                        {covers.map((cover, i) => (
+                          <img
+                            key={i}
+                            src={cover}
+                            alt=""
+                            className="w-16 h-24 object-cover rounded-md shadow-lg border-2 border-background transition-transform group-hover:translate-y-1"
+                            style={{
+                              transform: `rotate(${(i - 1) * 5}deg)`,
+                              zIndex: 3 - i,
+                            }}
+                          />
+                        ))}
                       </div>
-                      {progress.percentage === 100 && (
-                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      )}
-                    </div>
-
-                    {collection.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {collection.description}
-                      </p>
+                    ) : (
+                      <div className="flex items-center justify-center w-full">
+                        <TypeIcon className="w-12 h-12 text-white/60" />
+                      </div>
                     )}
+                  </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Fortschritt</span>
-                        <span className="font-bold text-primary">
-                          {progress.collected} / {progress.total}
-                        </span>
-                      </div>
-                      <Progress value={progress.percentage} className="h-2" />
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>✅ {progress.collected} Gesammelt</span>
-                        {progress.wishlist > 0 && <span>⭐ {progress.wishlist} Wunschliste</span>}
-                        {progress.missing > 0 && <span>❌ {progress.missing} Fehlend</span>}
-                      </div>
+                  {progress.percentage === 100 && (
+                    <Badge className="absolute top-3 right-3 bg-background/80 text-foreground">
+                      <Star className="w-3 h-3 mr-1 fill-yellow-500 text-yellow-500" />
+                      Komplett
+                    </Badge>
+                  )}
+                </div>
+
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-serif font-bold text-lg text-foreground line-clamp-1">
+                        {collection.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {COLLECTION_TYPES.find((ct) => ct.value === collection.type)?.label}
+                      </p>
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle edit/delete actions
+                      }}
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {collection.description && (
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {collection.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="gap-1">
+                      <Folder className="w-3 h-3" />
+                      {progress.total} Bücher
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Add New Collection Card */}
+          <Card
+            className="bg-card/40 backdrop-blur-sm border-dashed border-2 border-border hover:border-primary/50 transition-all duration-300 cursor-pointer animate-fade-in flex items-center justify-center min-h-[280px]"
+            style={{ animationDelay: `${collections.length * 100}ms` }}
+            onClick={() => setOpenCreateDialog(true)}
+          >
+            <CardContent className="text-center p-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-serif font-bold text-lg text-foreground mb-2">
+                Neue Kollektion erstellen
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Organisiere deine Bücher nach Themen
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {collections.length === 0 && (
+          <Card className="p-12 rounded-2xl text-center bg-card/80 backdrop-blur-sm">
+            <BookMarked className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-xl font-serif font-semibold mb-2">Keine Kollektionen</h3>
+            <p className="text-muted-foreground mb-6">
+              Erstelle deine erste Kollektion, um Bücher zu organisieren
+            </p>
+            <Button onClick={() => setOpenCreateDialog(true)} className="shadow-lg">
+              <Plus className="w-4 h-4 mr-2" />
+              Erste Kollektion erstellen
+            </Button>
+          </Card>
+        )}
       </div>
     </div>
   );

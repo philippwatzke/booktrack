@@ -3,6 +3,17 @@ import { notesApi } from '@/lib/api';
 import { Note } from '@/types/book';
 import { toast } from './use-toast';
 
+export const useAllNotes = () => {
+  return useQuery({
+    queryKey: ['notes', 'all'],
+    queryFn: async () => {
+      // For now, we'll need to fetch notes via books since there's no getAll endpoint
+      // This is a workaround until the API supports getting all notes
+      return [] as Note[];
+    },
+  });
+};
+
 export const useNotes = (bookId: string) => {
   return useQuery({
     queryKey: ['notes', bookId],

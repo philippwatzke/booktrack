@@ -3,6 +3,19 @@ import { quotesApi } from '@/lib/api';
 import { Quote } from '@/types/book';
 import { toast } from './use-toast';
 
+export const useAllQuotes = () => {
+  return useQuery({
+    queryKey: ['quotes', 'all'],
+    queryFn: async () => {
+      const response = await quotesApi.getAll();
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch quotes');
+      }
+      return response.data as Quote[];
+    },
+  });
+};
+
 export const useQuotes = (bookId: string) => {
   return useQuery({
     queryKey: ['quotes', bookId],
