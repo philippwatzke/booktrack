@@ -214,7 +214,7 @@ export default function BookDetail() {
             )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               <Card className="p-4 rounded-xl border-border text-center">
                 <BookOpen className="h-6 w-6 text-primary mx-auto mb-2" />
                 <div className="text-2xl font-bold text-foreground">{book.pageCount}</div>
@@ -227,6 +227,17 @@ export default function BookDetail() {
                 </div>
                 <div className="text-xs text-muted-foreground">Jahr</div>
               </Card>
+              {book.status === "READING" && (
+                <Card className="p-4 rounded-xl border-border text-center">
+                  <Clock className="h-6 w-6 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">
+                    {Math.floor((new Date().getTime() - new Date(book.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {Math.floor((new Date().getTime() - new Date(book.createdAt).getTime()) / (1000 * 60 * 60 * 24)) === 1 ? 'Tag' : 'Tage'} seit Start
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Tabs */}

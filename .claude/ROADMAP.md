@@ -22,6 +22,38 @@
 - ✅ Automatische Streak-Berechnung nach Reading Sessions
 - ✅ Freeze Days System (3 pro Monat)
 
+### Phase 1.3: Digitales Sammelalbum ✅ (Grundfunktionen)
+- ✅ Collection-Datenbank-Schema (GENRE, AUTHOR, SERIES, THEME, YEAR)
+- ✅ BookCollection-Verbindungstabelle
+- ✅ Backend-API für Collections (Create, Read, Update, Delete)
+- ✅ Frontend für Collections-Verwaltung
+- 🟡 Noch offen: Album-Ansicht, Fortschrittsvisualisierung, Serien-Tracker
+
+### Phase 2.1: Erweitertes Dashboard ✅ (Teilweise)
+- ✅ Letzte Aktivität Widget (letzte Sessions/Notizen/Quotes)
+- ✅ Lesemuster Widget (beste Tageszeit, Lieblingswochentag)
+- ✅ Jahresprognose Widget (Predictive Reading)
+- ✅ Monatsübersicht Widget (Monthly Report)
+- ✅ Dashboard-Personalisierung:
+  - Widgets ein-/ausschalten
+  - Kollapsierbare Widgets
+  - Gespeicherte Einstellungen pro User
+  - Masonry-Layout (automatische Lücken-Füllung)
+- 🟡 Noch offen: Drag & Drop Anordnung, Widget-Größen anpassbar
+
+### Phase 2.4: Session-Timer Verbesserungen ✅
+- ✅ Countdown-Timer mit Ziel-Dauer
+- ✅ Kontext erfassen (Location, Time of Day, Mood)
+- ✅ Seitenziel setzen
+- ✅ Reflexion-Prompt nach Session
+- ✅ Qualitätsbewertung (1-5)
+- 🟡 Noch offen: Pause/Resume, Ambient Sounds, Fullscreen-Modus
+
+### Phase 7.3: PostgreSQL Migration ✅
+- ✅ Schema auf PostgreSQL umgestellt
+- ✅ Alle Migrationen angewendet
+- ✅ Collections-Tabellen erstellt
+
 ### Quick Wins umgesetzt ✅
 - ✅ #1: "Weiterlesen"-Button auf Dashboard
 - ✅ #2: Zufälliges Zitat aus Sammlung auf Dashboard
@@ -29,6 +61,7 @@
 - ✅ #4: Lesegeschwindigkeit anzeigen (Seiten/Stunde)
 - ✅ #5: Geschätzte Zeit bis Fertigstellung
 - ✅ #6: Lesefortschritt in % auf allen BookCards
+- ✅ #7: Dashboard-Widget-Personalisierung
 
 ---
 

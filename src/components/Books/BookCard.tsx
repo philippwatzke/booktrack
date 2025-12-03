@@ -2,6 +2,7 @@ import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { getGenreColorConsistent } from "@/lib/genreColors";
 
 interface BookCardProps {
   book: Book;
@@ -86,8 +87,8 @@ export function BookCard({ book, onClick }: BookCardProps) {
             {book.genres.slice(0, 2).map((genre) => (
               <Badge
                 key={genre}
-                variant="secondary"
-                className="text-xs rounded-full px-2 py-0.5"
+                variant="outline"
+                className={`text-xs rounded-full px-2 py-0.5 border ${getGenreColorConsistent(genre)}`}
               >
                 {genre}
               </Badge>
