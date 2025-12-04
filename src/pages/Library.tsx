@@ -15,8 +15,11 @@ import {
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddBookDialog } from "@/components/Books/AddBookDialog";
+import { useSimplePageTitle } from "@/hooks/usePageTitle";
 
 export default function Library() {
+  useSimplePageTitle("Bibliothek");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);

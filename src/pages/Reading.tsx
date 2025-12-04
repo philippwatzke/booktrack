@@ -3,6 +3,7 @@ import { useBooks } from "@/hooks/useBooks";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { BookOpen, TrendingUp } from "lucide-react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function Reading() {
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ export default function Reading() {
   const overallProgress = totalBooksPages > 0
     ? Math.round((totalPages / totalBooksPages) * 100)
     : 0;
+
+  // Set page title with overall progress
+  usePageTitle({
+    title: `Lese ich (${readingBooks.length})`,
+    progress: overallProgress,
+    showProgress: readingBooks.length > 0 && overallProgress > 0,
+  });
 
   if (isLoading) {
     return (
