@@ -14,8 +14,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSimplePageTitle } from "@/hooks/usePageTitle";
 
 const Index = () => {
+  useSimplePageTitle("Dashboard");
   const { data: books = [] } = useBooks();
   const { data: preferences } = usePreferences();
   const { data: dashboardStats, isLoading: isDashboardLoading } = useDashboardStats();

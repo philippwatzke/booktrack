@@ -28,6 +28,7 @@ import { NoteEditor } from "@/components/Notes/NoteEditor";
 import { QuoteEditor } from "@/components/Quotes/QuoteEditor";
 import { EditBookDialog } from "@/components/Books/EditBookDialog";
 import { ReadingStats } from "@/components/Books/ReadingStats";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -37,6 +38,18 @@ export default function BookDetail() {
   const [sessionOpen, setSessionOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Calculate progress percentage
+  const progress = book?.currentPage && book?.pageCount
+    ? Math.round((book.currentPage / book.pageCount) * 100)
+    : 0;
+
+  // Set page title with progress for reading books
+  usePageTitle({
+    title: book?.title || "Buch Details",
+    progress: progress,
+    showProgress: book?.status === "READING" && progress > 0,
+  });
 
   if (isLoading) {
     return (
@@ -214,7 +227,7 @@ export default function BookDetail() {
             )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               <Card className="p-4 rounded-xl border-border text-center">
                 <BookOpen className="h-6 w-6 text-primary mx-auto mb-2" />
                 <div className="text-2xl font-bold text-foreground">{book.pageCount}</div>
@@ -227,6 +240,17 @@ export default function BookDetail() {
                 </div>
                 <div className="text-xs text-muted-foreground">Jahr</div>
               </Card>
+              {book.status === "READING" && (
+                <Card className="p-4 rounded-xl border-border text-center">
+                  <Clock className="h-6 w-6 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">
+                    {Math.floor((new Date().getTime() - new Date(book.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {Math.floor((new Date().getTime() - new Date(book.createdAt).getTime()) / (1000 * 60 * 60 * 24)) === 1 ? 'Tag' : 'Tage'} seit Start
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Tabs */}

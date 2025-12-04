@@ -127,6 +127,15 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // Auto-update status to FINISHED if currentPage equals pageCount
+    if (updateData.currentPage !== undefined &&
+        existingBook.pageCount &&
+        updateData.currentPage >= existingBook.pageCount &&
+        existingBook.status !== 'FINISHED') {
+      updateData.status = 'FINISHED';
+      console.log(`📚 Auto-Status-Update: Book "${existingBook.title}" marked as FINISHED (${updateData.currentPage}/${existingBook.pageCount} pages)`);
+    }
+
     const book = await prisma.book.update({
       where: { id },
       data: transformBookForDb(updateData),

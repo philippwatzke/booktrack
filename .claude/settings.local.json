@@ -27,7 +27,9 @@
       "Bash(dir:*)",
       "Bash(timeout /t 3)",
       "Bash(del \"c:\\Users\\phili\\OneDrive\\Dokumente\\claudecodetest\\inkwell-atlas\\server\\src\\controllers\\seriesController.ts\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []

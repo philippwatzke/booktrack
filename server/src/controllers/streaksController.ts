@@ -123,6 +123,11 @@ export async function getDailyLogs(req: Request, res: Response) {
       data: formattedLogs,
     };
 
+    // Disable caching for daily logs to ensure fresh data
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     res.json(response);
   } catch (error) {
     console.error('Error fetching daily logs:', error);

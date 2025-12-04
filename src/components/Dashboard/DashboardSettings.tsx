@@ -40,9 +40,9 @@ const DEFAULT_WIDGET_ORDER = [
 ];
 
 const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
-  recentActivity: { enabled: true, collapsed: false },
+  recentActivity: { enabled: false, collapsed: false },
   readingPatterns: { enabled: true, collapsed: false },
-  predictiveReading: { enabled: true, collapsed: false },
+  predictiveReading: { enabled: false, collapsed: false },
   monthlyReport: { enabled: true, collapsed: false },
   streakCalendar: { enabled: true, collapsed: false },
   streakMilestones: { enabled: true, collapsed: false },

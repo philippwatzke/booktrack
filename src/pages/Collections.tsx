@@ -15,6 +15,7 @@ import {
   List,
   Star,
 } from "lucide-react";
+import { useSimplePageTitle } from "@/hooks/usePageTitle";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,8 @@ const COLLECTION_TYPES = [
 ];
 
 export default function Collections() {
+  useSimplePageTitle("Sammelalbum");
+
   const [view, setView] = useState<"grid" | "list">("grid");
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
 
